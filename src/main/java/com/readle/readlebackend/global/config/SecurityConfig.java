@@ -1,5 +1,7 @@
 package com.readle.readlebackend.global.config;
 
+import com.readle.readlebackend.global.auth.CurrentUserFilter;
+import com.readle.readlebackend.global.auth.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,6 +16,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
@@ -23,6 +26,8 @@ import org.springframework.web.cors.CorsConfigurationSource;
 public class SecurityConfig {
 
     private final CorsConfigurationSource corsConfigurationSource;
+    private final CurrentUserFilter currentUserFilter;
+    private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -41,7 +46,11 @@ public class SecurityConfig {
                                         .requestMatchers("/api/auth/**", "/api/users")
                                         .permitAll()
                                         .anyRequest()
-                                        .authenticated());
+                                        .authenticated())
+                .exceptionHandling(
+                        ex -> ex.authenticationEntryPoint(restAuthenticationEntryPoint))
+                .addFilterBefore(
+                        currentUserFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

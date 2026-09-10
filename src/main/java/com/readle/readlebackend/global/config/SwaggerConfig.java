@@ -1,5 +1,6 @@
 package com.readle.readlebackend.global.config;
 
+import com.readle.readlebackend.global.auth.CurrentUserFilter;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
@@ -24,16 +25,19 @@ public class SwaggerConfig {
         localServer.setUrl(contextPath);
         localServer.setDescription("Local Server");
 
+        String schemeName = CurrentUserFilter.USER_ID_HEADER;
+
         return new OpenAPI()
                 .addServersItem(localServer)
-                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
+                .addSecurityItem(new SecurityRequirement().addList(schemeName))
                 .components(
                         new Components().addSecuritySchemes(
-                                "bearerAuth",
+                                schemeName,
                                 new SecurityScheme()
-                                        .type(SecurityScheme.Type.HTTP)
-                                        .scheme("bearer")
-                                        .bearerFormat("JWT")
+                                        .type(SecurityScheme.Type.APIKEY)
+                                        .in(SecurityScheme.In.HEADER)
+                                        .name(schemeName)
+                                        .description("JWT 대신 사용하는 사용자 식별 헤더. 값에 userId(1~4) 입력.")
                         )
                 )
                 .info(new Info().title("Readle API 명세서").version("1.0").description("Swagger Test"));
