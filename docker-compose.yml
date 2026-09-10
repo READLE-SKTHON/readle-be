@@ -4,7 +4,7 @@ services:
     image: ${BACKEND_IMAGE:-ghcr.io/readle-skthon/readle-backend}:latest
     container_name: readle-backend
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     environment:
       - DB_URL=jdbc:postgresql://postgres:5432/readle_db
       - DB_USERNAME=${DB_USERNAME}
