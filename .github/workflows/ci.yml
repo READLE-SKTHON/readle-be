@@ -8,21 +8,6 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_DB: readle_db
-          POSTGRES_USER: readle
-          POSTGRES_PASSWORD: readle123
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U readle"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
 
@@ -36,9 +21,6 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      # DB 는 Testcontainers 가 테스트 실행 시 자동 기동한다 (ubuntu-latest 에 Docker 포함).
       - name: Build and test
         run: ./gradlew build
-        env:
-          DB_URL: jdbc:postgresql://localhost:5432/readle_db
-          DB_USERNAME: readle
-          DB_PASSWORD: readle123
