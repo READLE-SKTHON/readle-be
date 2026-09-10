@@ -4,6 +4,14 @@ CREATE TYPE game_mode_type AS ENUM ('daily_solo', 'room', 'category_practice');
 CREATE TYPE skill_category_type AS ENUM ('vocab', 'reading', 'inference', 'critical_thinking', 'expression');
 CREATE TYPE result_status_type AS ENUM ('correct', 'incorrect', 'insufficient_reasoning');
 CREATE TYPE news_category_type AS ENUM ('전체', '정치', '사회', '세계', '과학IT', '생활문화');
+CREATE TYPE main_category_type AS ENUM ('vocab', 'info_extraction', 'core_understanding', 'inference_judgment', 'structure');
+CREATE TYPE sub_category_type AS ENUM (
+    'vocab_appropriateness', 'vocab_meaning', 'vocab_paraphrase',
+    'info_consistency', 'info_evidence',
+    'core_topic', 'core_title', 'core_gist', 'core_argument',
+    'inference_blank', 'inference_implication', 'inference_continuation',
+    'structure_sentence_insertion', 'structure_order', 'structure_irrelevant_sentence'
+);
 
 -- 학교
 CREATE TABLE schools (
@@ -77,7 +85,8 @@ CREATE TABLE questions (
     explanation TEXT,
     hint TEXT,
     game_mode game_mode_type NOT NULL,
-    skill_category skill_category_type NOT NULL,
+    main_category main_category_type NOT NULL,
+    sub_category sub_category_type,
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
