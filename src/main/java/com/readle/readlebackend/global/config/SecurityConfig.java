@@ -45,6 +45,8 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers("/api/auth/**", "/api/users")
                                         .permitAll()
+                                        .requestMatchers("/api/questions/generate/**")
+                                        .permitAll()
                                         .anyRequest()
                                         .authenticated())
                 .exceptionHandling(
