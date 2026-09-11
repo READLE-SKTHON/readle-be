@@ -20,29 +20,6 @@ public class AuthService {
     private final SchoolRepository schoolRepository;
 
     /**
-     * userId가 존재하는 유저인지만 확인하고 프로필을 반환한다. 비밀번호 검증은 하지 않는다
-     * (해커톤용 임시 인증 — 이후 요청은 이 userId를 X-USER-ID 헤더로 보내면 인증된다).
-     */
-    public LoginResponse login(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(AuthErrorCode.LOGIN_USER_NOT_FOUND));
-
-        String schoolName = null;
-        if (user.getSchoolId() != null) {
-            schoolName = schoolRepository.findById(user.getSchoolId())
-                    .map(School::getSchoolName)
-                    .orElse(null);
-        }
-
-        return LoginResponse.builder()
-                .userId(user.getId())
-                .nickname(user.getNickname())
-                .schoolId(user.getSchoolId())
-                .schoolName(schoolName)
-                .build();
-    }
-
-    /**
      * 닉네임 + 학교 이름으로 로그인한다. 비밀번호 검증은 하지 않는다 (해커톤용 임시 인증).
      * 학교 이름은 "서경대"/"서경대학교", "OO고"/"OO고등학교" 처럼 줄인 표기와 정식 표기를
      * 구분하지 않고 같은 학교로 인식한다 ({@link #normalizeSchoolName}).
