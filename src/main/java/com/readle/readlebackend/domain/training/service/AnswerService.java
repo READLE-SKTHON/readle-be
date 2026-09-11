@@ -1,10 +1,7 @@
 package com.readle.readlebackend.domain.training.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.readle.readlebackend.domain.news.entity.News;
 import com.readle.readlebackend.domain.news.repository.NewsRepository;
 import com.readle.readlebackend.domain.question.entity.Question;
@@ -13,8 +10,6 @@ import com.readle.readlebackend.domain.question.enums.QuestionFormat;
 import com.readle.readlebackend.domain.question.repository.QuestionRepository;
 import com.readle.readlebackend.domain.training.dto.response.TodayQuestionsResponse;
 import com.readle.readlebackend.domain.training.entity.Answer;
-import com.readle.readlebackend.domain.training.enums.ResultStatus;
-import com.readle.readlebackend.domain.training.enums.SkillCategory;
 import com.readle.readlebackend.domain.training.exception.AnswerErrorCode;
 import com.readle.readlebackend.domain.training.repository.AnswerRepository;
 import com.readle.readlebackend.domain.user.entity.User;
@@ -91,7 +86,7 @@ public class AnswerService {
                     .content(q.getContent())
                     .choices(parseChoices(q.getChoices()))
                     .level(q.getLevel())
-                    .requireReason(q.getQuestionFormat() == QuestionFormat.OX)
+                    .requireReason(requiresReason(q.getQuestionFormat()))
                     .build());
         }
 
@@ -126,6 +121,93 @@ public class AnswerService {
             log.warn("[AnswerService] 선택지 파싱 실패: choicesJson={}", choicesJson, e);
             throw new CustomException(GlobalErrorCode.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    // 답안 제출
+    @Transactional
+    public SubmitAnswerResponse submitAnswer(SubmitAnswerRequest request, Long userId, Long questionId) {
+
+        // 사용자가 존재하는지 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(AuthErrorCode.INVALID_USER_ID));
+
+        // 퀴즈가 존재하는지 조회
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new CustomException(AnswerErrorCode.QUESTION_NOT_FOUND));
+
+        // O,X 퀴즈와 short_answer에 근거가 있는지 조회
+        if (requiresReason(question.getQuestionFormat()) && (request.getReason() == null || request.getReason().isBlank())) {
+            log.warn("[AnswerService] 근거 누락: userId={}, questionId={}", userId, questionId);
+            throw new CustomException(AnswerErrorCode.REASON_REQUIRED);
+        }
+
+        // 문제 유형별 채점
+        GradingResult grading = (question.getQuestionFormat() == QuestionFormat.multiple_choice)
+                ? gradeMultipleChoice(question, request)
+                : gradeReasoningBased(question, request);
+
+        // 답안 저장
+        Answer answer = Answer.builder()
+                .user(user)
+                .question(question)
+                .selectedAnswer(request.getSelectedAnswer())
+                .resultStatus(grading.resultStatus())
+                .justification(request.getReason())
+                .overallScore(grading.score())
+                .mistakeFeedback(grading.mistakeFeedback())
+                .feedback(grading.feedback())
+                .build();
+
+        // DB 저장
+        answerRepository.save(answer);
+
+        // 로그 출력
+        log.info("[AnswerService] 답안 제출 성공: userId={}, questionId={}, resultStatus={}", userId, questionId, grading.resultStatus());
+
+        // 응답 세팅
+        return SubmitAnswerResponse.builder()
+                .resultStatus(grading.resultStatus())
+                .selectedAnswer(request.getSelectedAnswer())
+                .answer(question.getAnswer())
+                .overallScore(grading.score())
+                .feedback(SubmitAnswerResponse.Feedback.builder()
+                        .explanation(question.getExplanation())
+                        .mistakeFeedback(grading.mistakeFeedback())
+                        .hint(grading.resultStatus() == ResultStatus.correct ? null : question.getHint())
+                        .build())
+                .build();
+    }
+
+    // 객관식 채점 — 정답이 하나로 고정돼있어 판단 여지가 없으므로 단순 비교로 끝
+    private GradingResult gradeMultipleChoice(Question question, SubmitAnswerRequest request) {
+        boolean isCorrect = question.getAnswer().equals(request.getSelectedAnswer());
+        return new GradingResult(
+                isCorrect ? ResultStatus.correct : ResultStatus.incorrect,
+                isCorrect ? 10 : 0,
+                isCorrect ? null : "정답을 다시 확인해보세요.",
+                isCorrect ? "정답이에요!" : "아쉽지만 오답이에요."
+        );
+    }
+
+    // O,X / short_answer 채점
+    // TODO: AI 로직을 이용해 채점하는 방식으로 수정해야됨
+    private GradingResult gradeReasoningBased(Question question, SubmitAnswerRequest request) {
+        boolean isCorrect = question.getAnswer().equals(request.getSelectedAnswer());
+        return new GradingResult(
+                isCorrect ? ResultStatus.correct : ResultStatus.incorrect,
+                isCorrect ? 10 : 0,
+                isCorrect ? null : "정답을 다시 확인해보세요.",
+                isCorrect ? "정답이에요!" : "아쉽지만 오답이에요."
+        );
+    }
+
+    // TODO: 채점 결과를 담는 내부 전용 타입 (AI 담당자가 gradeReasoningBased만 교체하면 되도록 시그니처 고정)
+    private record GradingResult(ResultStatus resultStatus, int score, String mistakeFeedback, String feedback) {
+    }
+
+    // OX/short_answer는 근거 작성 필요
+    private boolean requiresReason(QuestionFormat questionFormat) {
+        return questionFormat == QuestionFormat.OX || questionFormat == QuestionFormat.short_answer;
     }
 
     // ===== AI 피드백(정오답 판정 + 5개 능력치 평가) 프롬프트/스키마 =====
