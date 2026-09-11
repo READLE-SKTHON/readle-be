@@ -40,7 +40,8 @@ public class GameController {
     }
 
     @GetMapping("/{gameRoomId}/questions/{order}")
-    @Operation(summary = "문제 조회", description = "지정한 순서(order, 0부터 시작)의 문제를 조회합니다. (정답/해설/힌트 제외)")
+    @Operation(summary = "문제 조회 (테스트용)", description = "지정한 순서(order, 0부터 시작)의 문제를 조회합니다. (정답/해설/힌트 제외) "
+            + "실제 게임 진행 중에는 이 API 대신 상태 폴링 API(/status, 예정)가 문제 내용까지 함께 반환할 예정이며, 이 API는 개별 확인/디버깅용입니다.")
     public ResponseEntity<BaseResponse<GameQuestionResponse>> getQuestion(
             @CurrentUser Long userId,
             @PathVariable Long gameRoomId,
