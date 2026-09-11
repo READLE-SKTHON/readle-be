@@ -1,17 +1,12 @@
--- V23: 능력치(임베딩) 평가 기능 재테스트를 위해 user_id=4(박예지)의 "오늘" 제출 데이터를 초기화한다.
--- answer_evaluations가 user_answers를 참조하므로(FK) 자식(answer_evaluations)부터 지운다.
+-- V23: 능력치(임베딩) 평가 기능 재테스트를 위해 questions/user_answers 데이터를 전체 초기화한다.
+-- FK 참조 관계상 자식 테이블부터 순서대로 지운다:
+--   game_room_answers, game_room_questions, review_session_question -> questions
+--   answer_evaluations -> user_answers
+--   user_answers -> questions
 
-DELETE FROM answer_evaluations
-WHERE user_id = 4
-  AND user_answer_id IN (
-      SELECT user_answer_id FROM user_answers
-      WHERE user_id = 4
-        AND created_at::date = CURRENT_DATE
-  );
-
-DELETE FROM user_answers
-WHERE user_id = 4
-  AND created_at::date = CURRENT_DATE;
-
+DELETE FROM game_room_answers;
+DELETE FROM game_room_questions;
+DELETE FROM review_session_question;
+DELETE FROM answer_evaluations;
 DELETE FROM user_answers;
 DELETE FROM questions;
