@@ -2,6 +2,7 @@ package com.readle.readlebackend.domain.room.controller;
 
 import com.readle.readlebackend.domain.room.dto.request.CreateRoomRequest;
 import com.readle.readlebackend.domain.room.dto.response.CreateRoomResponse;
+import com.readle.readlebackend.domain.room.dto.response.RoomParticipantsResponse;
 import com.readle.readlebackend.domain.room.service.RoomService;
 import com.readle.readlebackend.global.auth.CurrentUser;
 import com.readle.readlebackend.global.common.BaseResponse;
@@ -38,5 +39,14 @@ public class RoomController {
     ) {
         CreateRoomResponse response = roomService.joinRoom(userId, roomCode);
         return ResponseEntity.ok(BaseResponse.success("방에 참가했습니다.", response));
+    }
+
+    @GetMapping("/{roomId}/participants")
+    @Operation(summary = "참여자 목록 조회", description = "대기방 참여자 목록을 조회합니다. 프론트에서 폴링으로 반복 호출합니다.")
+    public ResponseEntity<BaseResponse<RoomParticipantsResponse>> getParticipants(
+            @PathVariable Long roomId
+    ) {
+        RoomParticipantsResponse response = roomService.getParticipants(roomId);
+        return ResponseEntity.ok(BaseResponse.success(response));
     }
 }

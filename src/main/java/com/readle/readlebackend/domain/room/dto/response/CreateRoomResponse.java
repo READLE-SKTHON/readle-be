@@ -4,11 +4,16 @@ import com.readle.readlebackend.domain.room.entity.GameRoom;
 import com.readle.readlebackend.domain.room.enums.Category;
 import com.readle.readlebackend.domain.room.enums.Difficulty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @Builder
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Schema(description = "방 생성 응답")
 public class CreateRoomResponse {
 
