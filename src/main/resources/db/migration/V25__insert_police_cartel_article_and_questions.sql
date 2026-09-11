@@ -3124,3 +3124,2508 @@ INSERT INTO questions (
     'structure_sentence_insertion',
     1
 );
+
+-- 기사(''쾌청한 가을 날씨 열흘 더 간다… 비 소식 없이 일교차 커'')는 이미 DB에 있음(V12/V15).
+-- 여기서는 그 기사에 문제 20개만 추가한다. news_id는 제목으로 조회한다.
+
+-- [dailyQuestions 1~10] (game_mode: 'daily_solo')
+INSERT INTO questions (
+    news_id, content, question_format, choices, answer, explanation, hint, game_mode, main_category, sub_category, level
+) VALUES
+-- 1. vocab / vocab_meaning (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '쾌청한 가을 날씨 열흘 더 간다… 비 소식 없이 일교차 커'),
+    '기사에 등장한 ''일교차(日較差)''의 의미로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["하루 동안의 가장 높은 기온과 가장 낮은 기온의 차이", "오늘의 기온과 내일의 기온 사이에 발생하는 차이", "서울의 기온과 제주도의 기온 사이에 발생하는 차이", "여름철 기온과 가을철 기온의 평균적인 차이"]'::json,
+    '하루 동안의 가장 높은 기온과 가장 낮은 기온의 차이',
+    '일교차는 하루(24시간) 동안 기록된 최저기온과 최고기온의 차이를 의미합니다.',
+    '낮과 밤 사이에 벌어지는 기온의 차이를 떠올려 보세요.',
+    'daily_solo',
+    'vocab',
+    'vocab_meaning',
+    1
+),
+-- 2. vocab / vocab_paraphrase (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '쾌청한 가을 날씨 열흘 더 간다… 비 소식 없이 일교차 커'),
+    '기사의 "선선하고 쾌청한 가을 날씨"에서 ''쾌청(快晴)한''과 뜻이 가장 가까운 표현은 무엇인가요?',
+    'multiple_choice',
+    '["하늘이 맑고 기분이 상쾌한", "구름이 많고 매우 어두운", "비바람이 세차게 불어오는", "안개가 자욱하여 앞이 보이지 않는"]'::json,
+    '하늘이 맑고 기분이 상쾌한',
+    '쾌청하다는 하늘에 구름이 적고 날씨가 아주 맑아서 상쾌하다는 뜻입니다.',
+    '비 소식 없이 맑고 가을볕이 비치는 날씨를 뜻합니다.',
+    'daily_solo',
+    'vocab',
+    'vocab_paraphrase',
+    1
+),
+-- 3. info_extraction / info_consistency (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '쾌청한 가을 날씨 열흘 더 간다… 비 소식 없이 일교차 커'),
+    '기상청에 따르면 일요일인 9월 13일 오후부터 밤사이 제주도 산지에 비가 내릴 가능성이 있습니다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '2문단 마지막 문장에 "다만 일요일인 13일 오후부터 밤사이 제주도 산지에 비가 내릴 가능성이 있다"라고 명시되어 있으므로 O입니다.',
+    '2문단 끝부분에서 제주도 비 예보 내용을 확인해 보세요.',
+    'daily_solo',
+    'info_extraction',
+    'info_consistency',
+    1
+),
+-- 4. info_extraction / info_evidence (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '쾌청한 가을 날씨 열흘 더 간다… 비 소식 없이 일교차 커'),
+    '9월 11일 서울의 아침 최저기온과 낮 최고기온의 예상 일교차는 약 몇 도인가요?',
+    'multiple_choice',
+    '["5도", "8도", "13도", "20도"]'::json,
+    '13도',
+    '3문단에서 "11일에는 서울의 아침 기온이 15도로 시작해 한낮에 28도까지 올라 일교차가 13도가량 나겠다"라고 설명합니다.',
+    '3문단의 서울 예보 기온(15도와 28도) 차이를 찾아보세요.',
+    'daily_solo',
+    'info_extraction',
+    'info_evidence',
+    1
+),
+-- 5. info_extraction / info_consistency (short_answer)
+(
+    (SELECT news_id FROM news_articles WHERE title = '쾌청한 가을 날씨 열흘 더 간다… 비 소식 없이 일교차 커'),
+    '일부 수치예보모델에서 태풍이 발생해 북상할 가능성이 있다고 전망한 날짜는 9월 몇 일인가요? (숫자만 작성)',
+    'short_answer',
+    '[]'::json,
+    '17',
+    '4문단에서 "일부 수치예보모델이 17일 일본 남쪽에서 태풍이 발생해 북상할 가능성을 내놨지만"이라고 언급되어 있습니다.',
+    '4문단에서 태풍 발생 가능성이 언급된 날짜 수치를 확인하세요.',
+    'daily_solo',
+    'info_extraction',
+    'info_consistency',
+    1
+),
+-- 6. core_understanding / core_topic (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '쾌청한 가을 날씨 열흘 더 간다… 비 소식 없이 일교차 커'),
+    '이 기사의 핵심 주제로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["당분간 비 소식 없이 쾌청하고 일교차가 큰 가을 날씨 지속 전망", "한반도를 직접 타격하는 대형 태풍의 발생 및 피해 예보", "전국적인 집중호우로 인한 수해 대책 마련 촉구", "제주도 전역에 발령된 장마전선 주의보 현황"]'::json,
+    '당분간 비 소식 없이 쾌청하고 일교차가 큰 가을 날씨 지속 전망',
+    '북쪽 찬 공기의 영향으로 당분간 비 소식 없이 쾌청하지만 내륙을 중심으로 일교차가 큰 날씨가 지속될 것이라는 예보를 다루고 있습니다.',
+    '제목과 도입부에서 전달하는 전체적인 날씨 전망을 종합해 보세요.',
+    'daily_solo',
+    'core_understanding',
+    'core_topic',
+    1
+),
+-- 7. core_understanding / core_gist (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '쾌청한 가을 날씨 열흘 더 간다… 비 소식 없이 일교차 커'),
+    '맑은 날 내륙 지역을 중심으로 일교차가 10~15도로 크게 벌어지는 원인으로 옳은 것은 무엇인가요?',
+    'multiple_choice',
+    '["낮에는 가을볕에 지표면이 빠르게 데워지고 해가 지면 열이 빠르게 식기 때문", "남쪽 북태평양고기압이 확장하면서 고온 다습한 공기를 매일 공급하기 때문", "강한 비구름대가 연속으로 통과하며 기온 변화가 불규칙하게 일어나기 때문", "태풍이 북상하여 찬 공기와 따뜻한 공기를 주기적으로 섞어주기 때문"]'::json,
+    '낮에는 가을볕에 지표면이 빠르게 데워지고 해가 지면 열이 빠르게 식기 때문',
+    '3문단에서 "맑은 날엔 낮 동안 가을볕에 지표면이 빠르게 데워지고 해가 지면 열이 빠르게 식기 때문이다"라고 일교차가 큰 원인을 분명히 밝히고 있습니다.',
+    '3문단 두 번째 문장에서 지표면의 열 흡수와 방출에 대한 내용을 확인하세요.',
+    'daily_solo',
+    'core_understanding',
+    'core_gist',
+    1
+),
+-- 8. inference_judgment / inference_implication (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '쾌청한 가을 날씨 열흘 더 간다… 비 소식 없이 일교차 커'),
+    '기사에 따르면 9월 14일부터 20일까지의 전국 낮 최고기온 예보는 예년 기온 수준과 큰 차이가 없다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '3문단 마지막 문장에서 "14~20일 전국의 아침 최저기온은 14~22도, 낮 최고기온은 23~30도로 예년과 비슷한 수준이다"라고 명시되어 있어 O입니다.',
+    '3문단 끝부분에서 예년 기온과의 비교 설명을 확인해 보세요.',
+    'daily_solo',
+    'inference_judgment',
+    'inference_implication',
+    1
+),
+-- 9. inference_judgment / inference_blank (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '쾌청한 가을 날씨 열흘 더 간다… 비 소식 없이 일교차 커'),
+    '다음 빈칸에 들어갈 말로 가장 적절한 것은 무엇인가요?
+"우리나라는 한반도 북쪽 고기압의 영향권에 들어 당분간 차고 (                      ) 공기가 유입되어 맑은 날씨가 이어질 전망이다."',
+    'multiple_choice',
+    '["건조한", "습한", "무더운", "탁한"]'::json,
+    '건조한',
+    '2문단에서 "북쪽 고기압 또는 그 가장자리의 영향권에 들어 차고 건조한 공기가 유입되겠다"라고 나와 있습니다.',
+    '2문단 두 번째 문장에서 찬 공기와 함께 유입되는 공기의 성질을 찾아보세요.',
+    'daily_solo',
+    'inference_judgment',
+    'inference_blank',
+    1
+),
+-- 10. structure / structure_order (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '쾌청한 가을 날씨 열흘 더 간다… 비 소식 없이 일교차 커'),
+    '이 기사의 글 전개 순서로 가장 바르게 연결된 것은 무엇인가요?',
+    'multiple_choice',
+    '["전반적인 가을 날씨 요약 -> 기압계 배치 및 건조 공기 유입 -> 기온 전망 및 일교차 원인 -> 다음 주 후반 변수(태풍 전망)", "다음 주 후반 변수(태풍 전망) -> 기온 전망 및 일교차 원인 -> 기압계 배치 및 건조 공기 유입 -> 전반적인 가을 날씨 요약", "기온 전망 및 일교차 원인 -> 전반적인 가을 날씨 요약 -> 다음 주 후반 변수(태풍 전망) -> 기압계 배치 및 건조 공기 유입", "기압계 배치 및 건조 공기 유입 -> 다음 주 후반 변수(태풍 전망) -> 전반적인 가을 날씨 요약 -> 기온 전망 및 일교차 원인"]'::json,
+    '전반적인 가을 날씨 요약 -> 기압계 배치 및 건조 공기 유입 -> 기온 전망 및 일교차 원인 -> 다음 주 후반 변수(태풍 전망)',
+    '1문단에서 전체적인 날씨 상황을 요약하고, 2문단 기압계 상황, 3문단 세부 기온과 일교차 원인, 4문단 태풍 변수로 글이 순차적으로 전개됩니다.',
+    '기사의 첫 문단부터 마지막 문단까지의 서술 순서를 차례대로 따라가 보세요.',
+    'daily_solo',
+    'structure',
+    'structure_order',
+    1
+),
+
+-- [gameQuestions 1~10] (game_mode: 'room')
+-- 11. vocab / vocab_meaning (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '쾌청한 가을 날씨 열흘 더 간다… 비 소식 없이 일교차 커'),
+    '[문단] 당분간 우리나라는 북쪽 고기압 또는 그 가장자리의 영향권에 들어 차고 건조한 공기가 유입되겠다.
+
+[문제] 위 문단에서 ''유입(流入)''의 뜻으로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["외부에서 안으로 흘러 들어옴", "안에서 외부로 빠져나감", "한곳에 고여 움직이지 않음", "서로 다른 두 물질이 섞임"]'::json,
+    '외부에서 안으로 흘러 들어옴',
+    '''유입''은 안으로 흘러 들어오는 것을 의미합니다.',
+    '공기가 우리나라 영역 안으로 들어오는 모습을 의미합니다.',
+    'room',
+    'vocab',
+    'vocab_meaning',
+    1
+),
+-- 12. vocab / vocab_appropriateness (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '쾌청한 가을 날씨 열흘 더 간다… 비 소식 없이 일교차 커'),
+    '[문단] 기압계 변동성이 커 예단하긴 이르다.
+
+[문제] 위 문단의 ''예단(豫斷)하긴''은 ''어떤 일을 미리 판단하긴''이라는 뜻으로 문맥상 적절하게 사용되었습니다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '''예단하다''는 미리 예측하여 판단하다라는 뜻이므로 문맥에 잘 들어맞습니다.',
+    '태풍 발생 여부를 아직 확정하여 판단할 수 없다는 맥락입니다.',
+    'room',
+    'vocab',
+    'vocab_appropriateness',
+    1
+),
+-- 13. info_extraction / info_consistency (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '쾌청한 가을 날씨 열흘 더 간다… 비 소식 없이 일교차 커'),
+    '[문단] 10일 기상청에 따르면 한반도 북쪽 고기압은 더 강해지며 확장했고 남쪽 북태평양고기압은 일본 남동쪽 해상 멀리까지 물러난 상황이다.
+
+[문제] 위 문단에 따르면 한반도 남쪽의 북태평양고기압은 한반도 근처까지 더욱 강하게 확장하였습니다. (O/X)',
+    'OX',
+    '[]'::json,
+    'X',
+    '문단에 따르면 북태평양고기압은 일본 남동쪽 해상 멀리까지 물러난 상태입니다.',
+    '2문단 첫 문장에서 북태평양고기압의 위치 변화를 확인하세요.',
+    'room',
+    'info_extraction',
+    'info_consistency',
+    1
+),
+-- 14. info_extraction / info_evidence (short_answer)
+(
+    (SELECT news_id FROM news_articles WHERE title = '쾌청한 가을 날씨 열흘 더 간다… 비 소식 없이 일교차 커'),
+    '[문단] 주말인 12, 13일은 아침 최저기온이 12~21도, 낮 최고기온이 24~31도로 예보됐다.
+
+[문제] 주말에는 남부지방에서 낮 기온이 몇 도 이상으로 오르겠나요? (숫자와 도를 작성, 예: 25도)',
+    'short_answer',
+    '[]'::json,
+    '30도',
+    '3문단 네 번째 문장에 "주말에는 남부지방에서 낮 기온이 30도 이상으로 오르겠다"라고 제시되어 있습니다.',
+    '3문단 네 번째 문장에서 남부지방 낮 최고기온 수치를 찾으세요.',
+    'room',
+    'info_extraction',
+    'info_evidence',
+    1
+),
+-- 15. core_understanding / core_topic (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '쾌청한 가을 날씨 열흘 더 간다… 비 소식 없이 일교차 커'),
+    '[문단] 다음 주에도 낮과 밤의 기온차는 내륙을 중심으로 10~15도 벌어지겠다. 맑은 날엔 낮 동안 가을볕에 지표면이 빠르게 데워지고 해가 지면 열이 빠르게 식기 때문이다.
+
+[문제] 위 문단의 핵심 내용으로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["내륙 지역의 일교차가 크고 그 이유가 지표면 열 방출 및 흡수 때문이라는 설명", "남부 지방에 내린 폭우로 인해 지표면 온도가 낮아진 현상", "가을철 해수면 온도 상승으로 인한 해안가 습도 증가 현상", "전국적으로 가뭄이 심해지며 발생한 농작물 피해 대책"]'::json,
+    '내륙 지역의 일교차가 크고 그 이유가 지표면 열 방출 및 흡수 때문이라는 설명',
+    '문단은 내륙 지역의 큰 일교차 폭(10~15도)과 그 원인을 명확하게 설명하고 있습니다.',
+    '문단에 언급된 일교차 범위와 그 원인 문장에 주목해 보세요.',
+    'room',
+    'core_understanding',
+    'core_topic',
+    1
+),
+-- 16. core_understanding / core_title (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '쾌청한 가을 날씨 열흘 더 간다… 비 소식 없이 일교차 커'),
+    '[문단] 다음 주 후반 날씨의 변수는 태풍 발생 여부다. 일부 수치예보모델이 17일 일본 남쪽에서 태풍이 발생해 북상할 가능성을 내놨지만 기압계 변동성이 커 예단하긴 이르다.
+
+[문제] 위 문단의 내용에 가장 잘 어울리는 소제목은 무엇인가요?',
+    'multiple_choice',
+    '["다음 주 후반의 기상 변수… 태풍 발생 및 북상 가능성", "한반도 관통 확정… 대형 태풍 긴급 대피령 발령", "일본 내륙을 강타한 가을 태풍의 엄청난 피해 규모", "수치예보모델의 완성으로 정밀해진 일기예보 기술"]'::json,
+    '다음 주 후반의 기상 변수… 태풍 발생 및 북상 가능성',
+    '다음 주 후반에 날씨 변수가 될 수 있는 태풍 발생 가능성에 대한 짧은 관망 문단입니다.',
+    '문단 첫 문장에서 강조한 날씨의 핵심 변수가 무엇인지 확인해 보세요.',
+    'room',
+    'core_understanding',
+    'core_title',
+    1
+),
+-- 17. inference_judgment / inference_blank (short_answer)
+(
+    (SELECT news_id FROM news_articles WHERE title = '쾌청한 가을 날씨 열흘 더 간다… 비 소식 없이 일교차 커'),
+    '[문단] 9월 20일까지 전국에 별다른 비 예보가 없어 당분간 쾌청한 날씨가 이어지겠지만, 낮과 밤의 기온차가 커 환절기 ____ 관리에 주의해야 한다.
+
+[문제] 문맥상 빈칸에 들어갈 두 글자 단어는 무엇인가요?',
+    'short_answer',
+    '[]'::json,
+    '건강',
+    '일교차가 10도 이상 크게 나면 감기나 면역력 저하 등의 위험이 있으므로 환절기 ''건강'' 관리가 필요하다는 추론이 가장 자연스럽습니다.',
+    '큰 일교차와 관련하여 사람이 주의해야 할 기본 요소를 생각해 보세요.',
+    'room',
+    'inference_judgment',
+    'inference_blank',
+    1
+),
+-- 18. inference_judgment / inference_implication (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '쾌청한 가을 날씨 열흘 더 간다… 비 소식 없이 일교차 커'),
+    '[문단] 당분간 우리나라는 북쪽 고기압 또는 그 가장자리의 영향권에 들어 차고 건조한 공기가 유입되겠다. 하늘은 맑거나 가끔 구름 많은 날이 반복되겠다. 20일까지 전국엔 별다른 비 예보가 없다.
+
+[문제] 위 문단을 바탕으로 추론할 수 있는 사실로 옳은 것은 무엇인가요?',
+    'multiple_choice',
+    '["당분간 전국적으로 야외 활동을 하기에 비교적 무난하고 맑은 날씨가 이어질 것이다.", "전국적인 집중호우로 인해 야외 행사가 모두 취소될 것이다.", "북쪽 고기압 때문에 전국에 강한 눈보라가 밀려올 것이다.", "매일 밤마다 장마비가 내릴 것이다."]'::json,
+    '당분간 전국적으로 야외 활동을 하기에 비교적 무난하고 맑은 날씨가 이어질 것이다.',
+    '20일까지 별다른 비 예보가 없고 맑거나 구름 약간 있는 날씨가 계속된다고 하였으므로 야외 활동에 무난한 날씨임을 추론할 수 있습니다.',
+    '비 소식이 없는 맑은 가을 날씨의 영향을 생각해 보세요.',
+    'room',
+    'inference_judgment',
+    'inference_implication',
+    1
+),
+-- 19. structure / structure_order (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '쾌청한 가을 날씨 열흘 더 간다… 비 소식 없이 일교차 커'),
+    '[문단] (A) 맑은 날엔 낮 동안 가을볕에 지표면이 빠르게 데워진다.
+(B) 해가 지면 지표면의 열이 빠르게 식는다.
+(C) 그 결과 내륙을 중심으로 낮과 밤의 기온차가 10~15도로 크게 벌어진다.
+
+[문제] (A), (B), (C)의 논리적 원인과 결과 순서로 가장 바른 것은 무엇인가요?',
+    'multiple_choice',
+    '["(A) -> (B) -> (C)", "(C) -> (A) -> (B)", "(B) -> (A) -> (C)", "(A) -> (C) -> (B)"]'::json,
+    '(A) -> (B) -> (C)',
+    '낮에 지표면이 데워지고(A), 밤에 식어서(B), 최종적으로 낮과 밤의 기온차가 벌어지는(C) 시간적·원인결과적 흐름이 바릅니다.',
+    '낮의 온도 상승 -> 밤의 온도 하강 -> 최종 일교차 발생의 순서를 따라가 보세요.',
+    'room',
+    'structure',
+    'structure_order',
+    1
+),
+-- 20. structure / structure_sentence_insertion (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '쾌청한 가을 날씨 열흘 더 간다… 비 소식 없이 일교차 커'),
+    '[문단] 20일까지 전국엔 별다른 비 예보가 없다. [ ㄱ ] 일요일인 13일 오후부터 밤사이 제주도 산지에 비가 내릴 가능성이 있다.
+
+[문제] [ ㄱ ] 위치에 들어갈 접속어로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["다만", "따라서", "왜냐하면", "게다가"]'::json,
+    '다만',
+    '전국적으로 비가 없다는 일반적 설명 뒤에 제주도 산지라는 예외적인 구역의 비 소식을 덧붙이므로 예외나 대조의 접속어 ''다만''이 가장 적절합니다.',
+    '전국 예보 뒤에 제주도라는 예외 지역의 비 가능성을 덧붙이는 접속어를 찾아보세요.',
+    'room',
+    'structure',
+    'structure_sentence_insertion',
+    1
+);
+
+-- 기사(''"문학은 ''마지막 흑마법''… AI시대에도 안전"'')는 이미 DB에 있음(V12/V15).
+-- 여기서는 그 기사에 문제 20개만 추가한다. news_id는 제목으로 조회한다.
+
+-- [dailyQuestions 1~10] (game_mode: 'daily_solo')
+INSERT INTO questions (
+    news_id, content, question_format, choices, answer, explanation, hint, game_mode, main_category, sub_category, level
+) VALUES
+-- 1. vocab / vocab_meaning (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '“문학은 ‘마지막 흑마법’… AI시대에도 안전”'),
+    '기사에서 라바투트 작가가 표현한 문학이 AI 시대에도 지니는 특별한 매력이나 힘을 비유한 단어인 ''흑마법''의 의미로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["인간의 실제 고통과 야생성이 담긴 독창적이고 비밀스러운 힘", "컴퓨터 프로그램이 자동으로 시를 만들어 내는 기술", "남을 해치기 위해 사용하는 위험한 주문", "바둑 기사가 승리하기 위해 사용하는 기계적 계산법"]'::json,
+    '인간의 실제 고통과 야생성이 담긴 독창적이고 비밀스러운 힘',
+    '라바투트 작가는 AI 시스템과 대비하여 인간의 실제 경험과 내면의 고통이 담긴 문학의 독창적인 가치를 비유적으로 ''흑마법''이라 표현했습니다.',
+    '기사에서 AI와 대비되는 인간의 실제 경험과 고통을 떠올려 보세요.',
+    'daily_solo',
+    'vocab',
+    'vocab_meaning',
+    1
+),
+-- 2. vocab / vocab_paraphrase (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '“문학은 ‘마지막 흑마법’… AI시대에도 안전”'),
+    '기사의 "AI가 급부상하고 일상 속에 계속해서 침투하고 있는"에서 ''침투(浸透)하고''와 뜻이 가장 가까운 단어는 무엇인가요?',
+    'multiple_choice',
+    '["파고들고", "도망치고", "단절되고", "차단되고"]'::json,
+    '파고들고',
+    '''침투하다''는 깊숙이 스며들거나 파고들어 퍼지는 것을 의미하므로 ''파고들고''와 뜻이 가장 가깝습니다.',
+    '일상 속으로 들어와 퍼져 나가는 모습을 의미합니다.',
+    'daily_solo',
+    'vocab',
+    'vocab_paraphrase',
+    1
+),
+-- 3. info_extraction / info_consistency (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '“문학은 ‘마지막 흑마법’… AI시대에도 안전”'),
+    '라바투트 작가는 2023년 소설 ''매니악''에서 바둑 기사 이세돌을 다루었습니다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '2문단에서 "2023년 소설 ''매니악''을 통해서는 AI 알파고와 대국을 펼친 바둑 기사 이세돌을 다뤘다"라고 언급되어 있으므로 O입니다.',
+    '2문단 중간에서 작가의 소설 작품 내용을 확인해 보세요.',
+    'daily_solo',
+    'info_extraction',
+    'info_consistency',
+    1
+),
+-- 4. info_extraction / info_evidence (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '“문학은 ‘마지막 흑마법’… AI시대에도 안전”'),
+    '2026 서울국제작가축제의 개막대담 ''사람입니다''에서 라바투트 작가와 함께 대담을 나누는 한국 소설가는 누구인가요?',
+    'multiple_choice',
+    '["김애란", "이세돌", "데이먼 갤것", "히라노 게이치로"]'::json,
+    '김애란',
+    '3문단에서 "라바투트는 11일 소설가 김애란과 함께 개막대담 ''사람입니다''에서 AI 시대 ''인간성''에 대해 논할 예정이다"라고 나옵니다.',
+    '3문단 첫 번째 문장에서 개막대담을 함께하는 한국 작가 이름을 찾아보세요.',
+    'daily_solo',
+    'info_extraction',
+    'info_evidence',
+    1
+),
+-- 5. info_extraction / info_consistency (short_answer)
+(
+    (SELECT news_id FROM news_articles WHERE title = '“문학은 ‘마지막 흑마법’… AI시대에도 안전”'),
+    '2026 서울국제작가축제가 열리는 장소는 어디인가요? (OO구 OO아트센터 형태로 작성)',
+    'short_answer',
+    '[]'::json,
+    '종로구 아라아트센터',
+    '3문단 첫 번째 문장에 "서울 종로구 아라아트센터에서 열리는 서울국제작가축제"라고 명시되어 있습니다.',
+    '3문단에서 행사 개최 위치를 찾아보세요.',
+    'daily_solo',
+    'info_extraction',
+    'info_consistency',
+    1
+),
+-- 6. core_understanding / core_topic (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '“문학은 ‘마지막 흑마법’… AI시대에도 안전”'),
+    '이 기사의 핵심 주제로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["AI 시대에도 대체될 수 없는 문학의 가치와 서울국제작가축제 소식", "AI 바둑 프로그램 알파고의 승리 원인과 기술 분석", "해외 작가들의 국내 번역 출판 시장 독점 현상", "서울국제작가축제의 입장권 판매 및 행사장 위치 안내"]'::json,
+    'AI 시대에도 대체될 수 없는 문학의 가치와 서울국제작가축제 소식',
+    '기사는 칠레 작가 라바투트의 인터뷰를 통해 AI 시대에 인간 경험이 담긴 문학의 가치를 설명하고, 서울국제작가축제 개막 소식을 다루고 있습니다.',
+    '제목과 라바투트 작가의 발언 내용을 종합해 보세요.',
+    'daily_solo',
+    'core_understanding',
+    'core_topic',
+    1
+),
+-- 7. core_understanding / core_gist (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '“문학은 ‘마지막 흑마법’… AI시대에도 안전”'),
+    '라바투트 작가가 "문학은 AI로부터 완전히 안전하다"고 주장하는 주요 근원은 무엇인가요?',
+    'multiple_choice',
+    '["문학에는 심장 없는 시스템이 흉내 낼 수 없는 인간의 고통과 실제 경험이 담겨 있기 때문", "AI는 아직 한글과 스페인어 같은 복잡한 언어를 번역할 수 없기 때문", "작가들이 AI 기술을 활용하여 더 빠르게 소설을 쓸 수 있게 되었기 때문", "AI가 개발되는 속도보다 문학 책의 출판 속도가 더 빠르기 때문"]'::json,
+    '문학에는 심장 없는 시스템이 흉내 낼 수 없는 인간의 고통과 실제 경험이 담겨 있기 때문',
+    '2문단에서 "인간의 고통, 실제 경험이 묻어나는 문학을 우리는 읽고 싶어 한다"라며 인간적 고통과 경험이 문학의 본질임을 언급했습니다.',
+    '2문단의 바둑 예시와 함께 언급된 인간 문학의 특징을 생각해 보세요.',
+    'daily_solo',
+    'core_understanding',
+    'core_gist',
+    1
+),
+-- 8. inference_judgment / inference_implication (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '“문학은 ‘마지막 흑마법’… AI시대에도 안전”'),
+    '라바투트 작가는 사람들이 인간 기사의 대국보다 AI끼리의 바둑 대국을 훨씬 더 보고 싶어 한다고 생각한다. (O/X)',
+    'OX',
+    '[]'::json,
+    'X',
+    '2문단에서 "그 누구도 AI끼리 바둑을 두는 모습을 보고 싶어 하지 않듯이"라고 말하여, 사람들이 AI끼리의 대결보다 인간의 경험과 감정이 들어간 모습을 원한다고 보았습니다.',
+    '2문단에서 작가가 사용한 비유("누구도 AI끼리 바둑을 두는 모습을...")를 확인해 보세요.',
+    'daily_solo',
+    'inference_judgment',
+    'inference_implication',
+    1
+),
+-- 9. inference_judgment / inference_blank (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '“문학은 ‘마지막 흑마법’… AI시대에도 안전”'),
+    '다음 빈칸에 들어갈 말로 가장 적절한 것은 무엇인가요?
+"라바투트 작가는 AI가 일상에 침투하는 시대일수록 기계적 결정이 아닌, 인간 본연의 (                      )와 내면의 감정을 회복해야 한다고 강조했다."',
+    'multiple_choice',
+    '["야생성", "알고리즘", "효율성", "기계화"]'::json,
+    '야생성',
+    '2문단 마지막 문장에서 "이 시대 우리가 무엇보다 야생성과 내면의 분노를 다시 회복해야 한다"라고 말했습니다.',
+    '2문단 끝부분에서 작가가 회복해야 한다고 강조한 단어를 찾으세요.',
+    'daily_solo',
+    'inference_judgment',
+    'inference_blank',
+    1
+),
+-- 10. structure / structure_order (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '“문학은 ‘마지막 흑마법’… AI시대에도 안전”'),
+    '이 기사의 글 전개 순서로 가장 바르게 연결된 것은 무엇인가요?',
+    'multiple_choice',
+    '["라바투트 작가의 핵심 발언(AI와 문학) -> 기자간담회에서의 구체적 비유와 견해 -> 축제 개최 정보 및 개막대담 안내", "축제 개최 정보 및 개막대담 안내 -> 라바투트 작가의 핵심 발언(AI와 문학) -> 기자간담회에서의 구체적 비유와 견해", "기자간담회에서의 구체적 비유와 견해 -> 축제 개최 정보 및 개막대담 안내 -> 라바투트 작가의 핵심 발언(AI와 문학)", "축제 개최 정보 및 개막대담 안내 -> 기자간담회에서의 구체적 비유와 견해 -> 라바투트 작가의 핵심 발언(AI와 문학)"]'::json,
+    '라바투트 작가의 핵심 발언(AI와 문학) -> 기자간담회에서의 구체적 비유와 견해 -> 축제 개최 정보 및 개막대담 안내',
+    '도입부에서 작가의 인용구로 시작해, 2문단에서 기자간담회 발언 내용을 상세히 다루고, 3문단에서 행사 기간 및 대담 일정으로 마무리됩니다.',
+    '각 문단이 인용구부터 시작해 행사 안내로 끝나는 흐름을 확인해 보세요.',
+    'daily_solo',
+    'structure',
+    'structure_order',
+    1
+),
+
+-- [gameQuestions 1~10] (game_mode: 'room')
+-- 11. vocab / vocab_meaning (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '“문학은 ‘마지막 흑마법’… AI시대에도 안전”'),
+    '[문단] 라바투트는 11일 소설가 김애란과 함께 개막대담 ''사람입니다''에서 AI 시대 ''인간성''에 대해 논할 예정이다.
+
+[문제] 위 문단의 ''대담(對談)''의 의미로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["마주하여 서로 말씀을 나누함", "여러 사람이 모여 서로 크게 다툼", "혼자서 청중을 향해 길게 연설함", "서면으로 질문을 주고받는 행위"]'::json,
+    '마주하여 서로 말씀을 나누함',
+    '''대담''은 서로 마주 앉아서 이야기를 주고받는 것을 의미합니다.',
+    '두 사람이 만나서 대화를 나누는 모습을 떠올려 보세요.',
+    'room',
+    'vocab',
+    'vocab_meaning',
+    1
+),
+-- 12. vocab / vocab_appropriateness (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '“문학은 ‘마지막 흑마법’… AI시대에도 안전”'),
+    '[문단] 11∼16일 서울 종로구 아라아트센터에서 열리는 서울국제작가축제에서는 이 같은 논의가 확장된다.
+
+[문제] 위 문단의 ''확장(擴張)된다''는 ''범위나 규모가 넓어져 늘어난다''는 의미로 바르게 사용되었습니다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '''확장되다''는 범위나 규모 따위가 넓어져 늘어나다라는 뜻으로 문맥상 적절합니다.',
+    '대담과 축제를 통해 논의의 주제나 범위가 더 넓어짐을 의미합니다.',
+    'room',
+    'vocab',
+    'vocab_appropriateness',
+    1
+),
+-- 13. info_extraction / info_consistency (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '“문학은 ‘마지막 흑마법’… AI시대에도 안전”'),
+    '[문단] 칠레 소설가 벵하민 라바투트는 한국문학번역원이 개최하는 ''2026 서울국제작가축제''를 위해 한국을 찾아 이같이 말했다.
+
+[문제] 2026 서울국제작가축제를 개최한 기관은 한국문학번역원이다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '2문단 첫 문장에 "한국문학번역원이 개최하는 ''2026 서울국제작가축제''"라고 명시되어 있습니다.',
+    '2문단에서 축제를 주최/개최하는 기관 이름을 확인하세요.',
+    'room',
+    'info_extraction',
+    'info_consistency',
+    1
+),
+-- 14. info_extraction / info_evidence (short_answer)
+(
+    (SELECT news_id FROM news_articles WHERE title = '“문학은 ‘마지막 흑마법’… AI시대에도 안전”'),
+    '[문단] 데이먼 갤것, 히라노 게이치로 등 해외 작가 10명과 한국 작가 14명이 참여해 독자들과 만난다.
+
+[문제] 이번 서울국제작가축제에 참여하는 해외 작가는 모두 몇 명인가요? (숫자와 명을 작성, 예: 5명)',
+    'short_answer',
+    '[]'::json,
+    '10명',
+    '3문단 마지막 문장에 "해외 작가 10명과 한국 작가 14명이 참여해"라고 나와 있습니다.',
+    '3문단 끝부분에서 해외 작가의 수를 찾아보세요.',
+    'room',
+    'info_extraction',
+    'info_evidence',
+    1
+),
+-- 15. core_understanding / core_topic (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '“문학은 ‘마지막 흑마법’… AI시대에도 안전”'),
+    '[문단] 라바투트는 과학기술의 발전사 속에 존재했던 인간에 주목해온 작가다. 2023년 소설 ''매니악''을 통해서는 AI 알파고와 대국을 펼친 바둑 기사 이세돌을 다뤘다.
+
+[문제] 위 문단이 설명하는 라바투트 작가의 특징으로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["과학기술 발전사 속 인간의 존재와 삶에 관심이 깊은 작가", "AI 알고리즘을 개발하여 직접 프로그램을 제작하는 컴퓨터 공학자", "바둑 기사 이세돌의 실제 바둑 스승이자 코치", "소설 작성을 중단하고 과학 교과서를 작성하는 연구원"]'::json,
+    '과학기술 발전사 속 인간의 존재와 삶에 관심이 깊은 작가',
+    '문단 첫 문장에서 작가가 과학기술 발전사 속의 인간에 주목해 왔음을 명확히 설명하고 있습니다.',
+    '문단 첫 문장의 "과학기술의 발전사 속에 존재했던 인간에 주목해온 작가"에 집중하세요.',
+    'room',
+    'core_understanding',
+    'core_topic',
+    1
+),
+-- 16. core_understanding / core_title (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '“문학은 ‘마지막 흑마법’… AI시대에도 안전”'),
+    '[문단] 10일 열린 기자간담회에서 그는 "그 누구도 AI끼리 바둑을 두는 모습을 보고 싶어 하지 않듯이, 인간의 고통, 실제 경험이 묻어나는 문학을 우리는 읽고 싶어 한다"고 말했다.
+
+[문제] 위 문단의 내용을 가장 잘 표현한 소제목은 무엇인가요?',
+    'multiple_choice',
+    '["인간의 실제 고통과 경험이 담긴 문학을 원하는 이유", "AI 바둑 알고리즘의 발전 과정과 한계점", "기자간담회 개최 소식과 참가자 명단 발표", "바둑 기사들의 경기 관람률 감소 현상"]'::json,
+    '인간의 실제 고통과 경험이 담긴 문학을 원하는 이유',
+    '기자간담회에서 라바투트 작가가 밝힌 문학 소비의 핵심 원인(인간의 고통과 경험)을 담은 소제목입니다.',
+    '사람들이 왜 AI가 아닌 인간의 문학을 읽고 싶어하는지에 대한 작가의 말을 떠올려 보세요.',
+    'room',
+    'core_understanding',
+    'core_title',
+    1
+),
+-- 17. inference_judgment / inference_blank (short_answer)
+(
+    (SELECT news_id FROM news_articles WHERE title = '“문학은 ‘마지막 흑마법’… AI시대에도 안전”'),
+    '[문단] 심장 없이 결정을 내리는 시스템(AI)과 달리, 문학은 감정과 고통을 가진 ____이 만드는 작품이라는 점에서 대체될 수 없는 독자성을 지닌다.
+
+[문제] 문맥상 빈칸에 들어갈 두 글자 단어는 무엇인가요?',
+    'short_answer',
+    '[]'::json,
+    '인간',
+    '기사 전반에서 기계 시스템(AI)과 대비되는 주체로서 ''인간''의 경험과 고통을 강조하고 있습니다.',
+    '심장 없는 AI와 대비되어 고통과 경험을 느끼는 존재를 의미합니다.',
+    'room',
+    'inference_judgment',
+    'inference_blank',
+    1
+),
+-- 18. inference_judgment / inference_implication (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '“문학은 ‘마지막 흑마법’… AI시대에도 안전”'),
+    '[문단] 라바투트는 11일 소설가 김애란과 함께 개막대담 ''사람입니다''에서 AI 시대 ''인간성''에 대해 논할 예정이다. 데이먼 갤것, 히라노 게이치로 등 해외 작가 10명과 한국 작가 14명이 참여해 독자들과 만난다.
+
+[문제] 위 문단을 통해 알 수 있는 서울국제작가축제의 특징으로 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["국내외 작가들이 함께 모여 시대적 화두인 ''인간성''과 문학을 논하는 교류의 장이다.", "한국 작가들만 참여하여 국내 문학 발전 방향만 일방적으로 발표한다.", "작가들이 AI에게 작문 기술을 배우는 강좌 형태로 개최된다.", "해외 유명 작가 1명만을 초청하여 진행하는 독주회 형식의 행사이다."]'::json,
+    '국내외 작가들이 함께 모여 시대적 화두인 ''인간성''과 문학을 논하는 교류의 장이다.',
+    '국내외 여러 작가들이 모여 AI 시대의 인간성에 관해 논하고 독자들과 만나는 축제임을 알 수 있습니다.',
+    '참여하는 작가들의 구성(국내외)과 논의 주제(인간성)를 종합해 보세요.',
+    'room',
+    'inference_judgment',
+    'inference_implication',
+    1
+),
+-- 19. structure / structure_order (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '“문학은 ‘마지막 흑마법’… AI시대에도 안전”'),
+    '[문단] (A) 라바투트는 과학기술의 발전사 속에 존재했던 인간에 주목해온 작가다.
+(B) 2023년 소설 ''매니악''을 통해서는 AI 알파고와 대국을 펼친 바둑 기사 이세돌을 다뤘다.
+
+[문제] (A)와 (B) 두 문장의 관계를 가장 잘 설명한 것은 무엇인가요?',
+    'multiple_choice',
+    '["(A) 작가의 전반적인 작품 경향 설명 -> (B) 이를 뒷받침하는 구체적인 대표작 사례 제시", "(A) 작가의 미래 계획 발표 -> (B) 과거에 포기했던 작업의 이유 설명", "(A) 다른 작가의 평가 소개 -> (B) 라바투트 작가의 반론 제시", "(A) 바둑 경기 결과 요약 -> (B) 과학기술의 역사적 배경 설명"]'::json,
+    '(A) 작가의 전반적인 작품 경향 설명 -> (B) 이를 뒷받침하는 구체적인 대표작 사례 제시',
+    '(A)에서 작가가 인간에 주목해 왔다는 일반적 경향을 말하고, (B)에서 이세돌을 다룬 소설 ''매니악''이라는 구체적 사례를 들고 있습니다.',
+    '일반적 특징 제시 후 구체적 소설 작품을 예시로 든 관계입니다.',
+    'room',
+    'structure',
+    'structure_order',
+    1
+),
+-- 20. structure / structure_sentence_insertion (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '“문학은 ‘마지막 흑마법’… AI시대에도 안전”'),
+    '[문단] 라바투트는 "문학은 인공지능으로부터 완전히 안전하다"고 보았다. [ ㄱ ] 심장 없이 결정을 내리는 시스템과 달리 문학에는 인간의 실제 고통이 묻어있기 때문이다.
+
+[문제] [ ㄱ ] 위치에 들어갈 접속어로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["왜냐하면", "그러나", "그렇지만", "결국"]'::json,
+    '왜냐하면',
+    '앞 문장의 주장에 대해 뒤 문장에서 이유와 근거를 설명하고 있으므로 원인을 나타내는 접속어 ''왜냐하면''이 가장 적절합니다.',
+    '앞 문장(주장)과 뒤 문장(이유) 사이의 인과관계를 생각해 보세요.',
+    'room',
+    'structure',
+    'structure_sentence_insertion',
+    1
+);
+
+-- 기사(''[날씨] 주말까지 쾌청한 초가을…15도 안팎 일교차 유의'')는 이미 DB에 있음(V12/V15).
+-- 여기서는 그 기사에 문제 20개만 추가한다. news_id는 제목으로 조회한다.
+
+-- [dailyQuestions 1~10] (game_mode: 'daily_solo')
+INSERT INTO questions (
+    news_id, content, question_format, choices, answer, explanation, hint, game_mode, main_category, sub_category, level
+) VALUES
+-- 1. vocab / vocab_meaning (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '[날씨] 주말까지 쾌청한 초가을…15도 안팎 일교차 유의'),
+    '기사에 등장한 ''환절기(換節期)''의 의미로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["계절이 바뀌는 시기", "한 해 중 가장 더운 시기", "비가 연속해서 많이 내리는 시기", "낮의 길이가 밤보다 긴 시기"]'::json,
+    '계절이 바뀌는 시기',
+    '환절기는 여름에서 가을, 가을에서 겨울처럼 계절이 바꾸어 바뀌는 시기를 뜻합니다.',
+    '여름에서 가을로 넘어가는 시기를 의미합니다.',
+    'daily_solo',
+    'vocab',
+    'vocab_meaning',
+    1
+),
+-- 2. vocab / vocab_paraphrase (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '[날씨] 주말까지 쾌청한 초가을…15도 안팎 일교차 유의'),
+    '기사의 "선선한 초가을 날씨"에서 ''선선한''과 뜻이 가장 가까운 표현은 무엇인가요?',
+    'multiple_choice',
+    '["시원하고 기분 좋을 정도로 서늘한", "피부가 아플 정도로 몹시 추운", "땀이 날 정도로 무덥고 습한", "바람이 없어 푹푹 증기 같은"]'::json,
+    '시원하고 기분 좋을 정도로 서늘한',
+    '선선하다는 것은 바람이나 날씨가 시원하고 서늘하다는 의미입니다.',
+    '초가을의 시원하고 서늘한 느낌을 떠올려 보세요.',
+    'daily_solo',
+    'vocab',
+    'vocab_paraphrase',
+    1
+),
+-- 3. info_extraction / info_consistency (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '[날씨] 주말까지 쾌청한 초가을…15도 안팎 일교차 유의'),
+    '오늘 서울의 아침 기온은 13도선까지 내려가 올가을 들어 가장 쌀쌀했습니다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '캐스터 발언 첫 문장에서 "오늘 아침 서울은 기온이 13도선까지 내려가며, 올가을 들어 가장 쌀쌀했습니다"라고 명시되어 있으므로 O입니다.',
+    '오늘 아침 서울 기온 관련 내용을 확인해 보세요.',
+    'daily_solo',
+    'info_extraction',
+    'info_consistency',
+    1
+),
+-- 4. info_extraction / info_evidence (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '[날씨] 주말까지 쾌청한 초가을…15도 안팎 일교차 유의'),
+    '기사에 언급된 설악산과 대관령 등 높은 산지의 아침 기온은 몇 도 안팎이었나요?',
+    'multiple_choice',
+    '["5도 안팎", "10도 안팎", "15도 안팎", "20도 안팎"]'::json,
+    '5도 안팎',
+    '본문에서 "설악산과 대관령 등 높은 산지는 5도 안팎까지 내려가 이미 초겨울에 가까워져있고요"라고 밝히고 있습니다.',
+    '높은 산지 지역의 아침 기온 숫자를 찾아보세요.',
+    'daily_solo',
+    'info_extraction',
+    'info_evidence',
+    1
+),
+-- 5. info_extraction / info_consistency (short_answer)
+(
+    (SELECT news_id FROM news_articles WHERE title = '[날씨] 주말까지 쾌청한 초가을…15도 안팎 일교차 유의'),
+    '기사 중 수도권 지역에서 대기가 건조하여 특별히 주의해달라고 당부한 항목은 무엇인가요? (OO 관리)',
+    'short_answer',
+    '[]'::json,
+    '불씨',
+    '본문 후반부에 "수도권은 대기도 건조한 만큼, 불씨 관리 잘 해주셔야겠습니다"라고 언급되어 있습니다.',
+    '건조한 날씨와 관련된 화재 예방 단어를 생각해 보세요.',
+    'daily_solo',
+    'info_extraction',
+    'info_consistency',
+    1
+),
+-- 6. core_understanding / core_topic (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '[날씨] 주말까지 쾌청한 초가을…15도 안팎 일교차 유의'),
+    '이 기사의 핵심 주제로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["주말까지 이어지는 쾌청한 초가을 날씨와 큰 일교차 유의 당부", "전국적인 대형 태풍 상륙에 따른 기상 특보 발령", "수도권 밤사이 폭우 예보 및 침수 피해 대책", "초겨울 한파 경보 발령과 폭설 대비 안내"]'::json,
+    '주말까지 이어지는 쾌청한 초가을 날씨와 큰 일교차 유의 당부',
+    '전체 기사는 주말까지 맑고 선선한 날씨가 지속되는 가운데 일교차가 매우 커 건강 및 차림새 관리가 필요하다는 내용을 전하고 있습니다.',
+    '제목과 앵커 멘트의 핵심 메시지를 종합해 보세요.',
+    'daily_solo',
+    'core_understanding',
+    'core_topic',
+    1
+),
+-- 7. core_understanding / core_gist (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '[날씨] 주말까지 쾌청한 초가을…15도 안팎 일교차 유의'),
+    '기상캐스터가 일교차가 큰 가을 날씨에 대비하여 권장한 옷차림 방안은 무엇인가요?',
+    'multiple_choice',
+    '["외투 한 벌을 챙겨 다녀 체온 조절하기", "낮에도 두꺼운 패딩점퍼를 계속 입기", "체온 유지를 위해 하루 종일 우비 착용하기", "아침 일찍부터 얇은 반소매 차림만 유지하기"]'::json,
+    '외투 한 벌을 챙겨 다녀 체온 조절하기',
+    '본문에서 "일교차가 큰 만큼, 외투 한벌 챙겨다니시는 편이 좋겠습니다" 및 "일교차에 대비한 옷차림으로 체온 조절 잘 해주시기 바랍니다"라고 강조합니다.',
+    '캐스터가 광화문광장 시민들의 차림새를 보며 권장한 사항을 확인하세요.',
+    'daily_solo',
+    'core_understanding',
+    'core_gist',
+    1
+),
+-- 8. inference_judgment / inference_implication (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '[날씨] 주말까지 쾌청한 초가을…15도 안팎 일교차 유의'),
+    '기사에 따르면 가을철 맑은 날에는 구름 사이로 강한 가을볕이 내리쬐어 자외선 지수가 높아질 수 있습니다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '본문에서 "구름 사이로 가을 볕이 강하게 내리쬐며 자외선 지수가 높겠고요"라고 직접 언급되었으므로 O입니다.',
+    '가을볕과 자외선 지수에 관한 언급을 찾아보세요.',
+    'daily_solo',
+    'inference_judgment',
+    'inference_implication',
+    1
+),
+-- 9. inference_judgment / inference_blank (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '[날씨] 주말까지 쾌청한 초가을…15도 안팎 일교차 유의'),
+    '다음 빈칸에 들어갈 가장 적절한 단어는 무엇인가요?
+"오늘 아침은 쌀쌀했지만 낮부터는 기온이 빠르게 올라 아침과 낮의 기온 차이가 10도 이상으로 크므로, (                      )에 걸리지 않도록 건강 관리에 유의해야 한다."',
+    'multiple_choice',
+    '["감기", "식중독", "열사병", "냉방병"]'::json,
+    '감기',
+    '기사 마지막 부분에서 "계절이 바뀌며 감기 걸리기 쉬운 날씨니까요"라고 일교차가 클 때 주의할 질환으로 감기를 제시하고 있습니다.',
+    '환절기 일교차가 클 때 걸리기 쉬운 대표적인 질환을 생각해 보세요.',
+    'daily_solo',
+    'inference_judgment',
+    'inference_blank',
+    1
+),
+-- 10. structure / structure_order (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '[날씨] 주말까지 쾌청한 초가을…15도 안팎 일교차 유의'),
+    '이 기사의 방송 진행 순서로 가장 바르게 연결된 것은 무엇인가요?',
+    'multiple_choice',
+    '["앵커 도입부 -> 아침/현재 기온 비교 -> 낮 기온 및 일교차 설명 -> 하늘 상태/주의사항 -> 주말 날씨 및 마무리", "주말 날씨 및 마무리 -> 하늘 상태/주의사항 -> 앵커 도입부 -> 낮 기온 및 일교차 설명 -> 아침/현재 기온 비교", "하늘 상태/주의사항 -> 앵커 도입부 -> 아침/현재 기온 비교 -> 주말 날씨 및 마무리 -> 낮 기온 및 일교차 설명", "아침/현재 기온 비교 -> 앵커 도입부 -> 주말 날씨 및 마무리 -> 낮 기온 및 일교차 설명 -> 하늘 상태/주의사항"]'::json,
+    '앵커 도입부 -> 아침/현재 기온 비교 -> 낮 기온 및 일교차 설명 -> 하늘 상태/주의사항 -> 주말 날씨 및 마무리',
+    '앵커의 개요 소개 후, 캐스터가 아침·현재 기온, 낮 기온과 일교차, 자외선/건조 등 주의사항, 주말 예보와 당부 멘트로 순차 진행합니다.',
+    '앵커 연결부터 캐스터의 마무리 멘트까지의 글 순서를 따라가 보세요.',
+    'daily_solo',
+    'structure',
+    'structure_order',
+    1
+),
+
+-- [gameQuestions 1~10] (game_mode: 'room')
+-- 11. vocab / vocab_meaning (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '[날씨] 주말까지 쾌청한 초가을…15도 안팎 일교차 유의'),
+    '[문단] 오늘 전국적으로 비 예보 없이, 하늘 대체로 맑게 드러나 있습니다. 구름 사이로 가을 볕이 강하게 내리쬐며 자외선 지수가 높겠고요.
+
+[문제] 위 문단에서 ''자외선(紫外線)''에 대한 설명으로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["태양광 중 가시광선보다 파장이 짧아 눈에 보이지 않지만 피부나 눈에 영향을 주는 빛", "지구 내부에서 발생하여 지표면으로 방출되는 열에너지", "비구름을 형성하여 대기를 습하게 만드는 수증기 입자", "바람을 일으켜 대기를 시원하게 만들어 주는 기류"]'::json,
+    '태양광 중 가시광선보다 파장이 짧아 눈에 보이지 않지만 피부나 눈에 영향을 주는 빛',
+    '자외선은 태양 빛의 한 종류로 피부 타기나 자극을 유발하는 광선입니다.',
+    '햇빛에 노출될 때 주의해야 하는 광선입니다.',
+    'room',
+    'vocab',
+    'vocab_meaning',
+    1
+),
+-- 12. vocab / vocab_appropriateness (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '[날씨] 주말까지 쾌청한 초가을…15도 안팎 일교차 유의'),
+    '[문단] 주말인 내일도 쾌청한 하늘 아래, 선선한 가을 날씨 만끽하기 좋겠습니다.
+
+[문제] 위 문단의 ''만끽(滿喫)하기''는 ''마음껏 누리고 즐기기''라는 뜻으로 문맥상 바르게 쓰였습니다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '''만끽하다''는 좋은 날씨나 기분을 마음껏 누린다는 뜻이므로 문맥에 맞습니다.',
+    '좋은 가을 날씨를 마음껏 누린다는 맥락입니다.',
+    'room',
+    'vocab',
+    'vocab_appropriateness',
+    1
+),
+-- 13. info_extraction / info_consistency (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '[날씨] 주말까지 쾌청한 초가을…15도 안팎 일교차 유의'),
+    '[문단] 이 시각 기온, 서울이 23.2도, 청주 24.5도, 대구 25.5도 보이고 있는데요. 아침과 낮, 낮과 밤의 기온 차가 10도 이상으로 크겠습니다.
+
+[문제] 위 방송 중 중계 시각의 서울 기온은 25.5도였습니다. (O/X)',
+    'OX',
+    '[]'::json,
+    'X',
+    '방송 시각 기준 서울 기온은 23.2도이고, 25.5도는 대구 기온입니다.',
+    '문단에서 제시된 서울 기온 수치를 다시 확인해 보세요.',
+    'room',
+    'info_extraction',
+    'info_consistency',
+    1
+),
+-- 14. info_extraction / info_evidence (short_answer)
+(
+    (SELECT news_id FROM news_articles WHERE title = '[날씨] 주말까지 쾌청한 초가을…15도 안팎 일교차 유의'),
+    '[문단] 파주 10도, 서울 13.4도 등 중부 내륙은 올가을 들어 가장 쌀쌀했습니다.
+
+[문제] 위 문단에서 아침 기온이 10도로 언급된 중부 내륙 지역은 어디인가요?',
+    'short_answer',
+    '[]'::json,
+    '파주',
+    '문단에 "파주 10도"라고 명확히 기재되어 있습니다.',
+    '10도라는 기온 수치 바로 앞에 나온 지명을 찾으세요.',
+    'room',
+    'info_extraction',
+    'info_evidence',
+    1
+),
+-- 15. core_understanding / core_topic (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '[날씨] 주말까지 쾌청한 초가을…15도 안팎 일교차 유의'),
+    '[문단] 오늘 전국적으로 비 예보 없이, 하늘 대체로 맑게 드러나 있습니다. 구름 사이로 가을 볕이 강하게 내리쬐며 자외선 지수가 높겠고요. 수도권은 대기도 건조한 만큼, 불씨 관리 잘 해주셔야겠습니다.
+
+[문제] 위 문단의 중심 내용으로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["맑은 하늘 속 자외선 주의와 수도권의 건조함에 따른 불씨 관리 당부", "전국적인 집중호우 예보와 강풍 피해 우려 사항 안내", "남부 지방의 습도 증가와 안개 주의보 발령 현황", "갑작스러운 가을 한파로 인한 농작물 냉해 예방 대책"]'::json,
+    '맑은 하늘 속 자외선 주의와 수도권의 건조함에 따른 불씨 관리 당부',
+    '문단은 맑은 날씨 속에 높은 자외선 지수와 수도권 대기 건조에 따른 불씨 관리 주의를 다루고 있습니다.',
+    '문단에서 언급된 날씨 상태(맑음)와 두 가지 주의사항(자외선, 불씨)을 정리해 보세요.',
+    'room',
+    'core_understanding',
+    'core_topic',
+    1
+),
+-- 16. core_understanding / core_title (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '[날씨] 주말까지 쾌청한 초가을…15도 안팎 일교차 유의'),
+    '[문단] 북쪽에서 찬 공기가 내려오면서, 일부 산지와 내륙 지역은 한 자릿수 기온으로 출발했습니다. 설악산과 대관령 등 높은 산지는 5도 안팎까지 내려가 이미 초겨울에 가까워져있고요.
+
+[문제] 위 문단에 가장 어울리는 소제목은 무엇인가요?',
+    'multiple_choice',
+    '["북쪽 찬 공기 유입… 산지·내륙 쌀쌀한 아침 기온", "전국 해수욕장 피서객으로 인산인해", "남부 지방 폭염특보 확대 지정", "가을장마 시작… 산간 지역 집중호우"]'::json,
+    '북쪽 찬 공기 유입… 산지·내륙 쌀쌀한 아침 기온',
+    '문단은 찬 공기 유입으로 산지 및 내륙 지역의 아침 기온이 한 자릿수까지 떨어진 상황을 다룹니다.',
+    '아침 기온이 떨어진 원인과 영향이 잘 담긴 제목을 골라보세요.',
+    'room',
+    'core_understanding',
+    'core_title',
+    1
+),
+-- 17. inference_judgment / inference_blank (short_answer)
+(
+    (SELECT news_id FROM news_articles WHERE title = '[날씨] 주말까지 쾌청한 초가을…15도 안팎 일교차 유의'),
+    '[문단] 현재 광화문광장에는 낮 동안 올라간 기온으로 반소매 차림의 시민들이 많지만, 해가 지면 기온이 급격히 떨어지므로 체온을 유지할 수 있는 ____을(를) 가지고 다니는 것이 좋다.
+
+[문제] 기사의 내용에 비추어 빈칸에 들어갈 가장 적절한 단어는 무엇인가요?',
+    'short_answer',
+    '[]'::json,
+    '외투',
+    '기사 본문에서 "일교차가 큰 만큼, 외투 한벌 챙겨다니시는 편이 좋겠습니다"라고 제안하고 있습니다.',
+    '쌀쌀한 아침·저녁에 입을 수 있는 겉옷을 의미합니다.',
+    'room',
+    'inference_judgment',
+    'inference_blank',
+    1
+),
+-- 18. inference_judgment / inference_implication (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '[날씨] 주말까지 쾌청한 초가을…15도 안팎 일교차 유의'),
+    '[문단] 주말인 내일도 쾌청한 하늘 아래, 선선한 가을 날씨 만끽하기 좋겠습니다. 계절이 바뀌며 감기 걸리기 쉬운 날씨니까요. 환절기 건강 관리 잘 해주시기 바랍니다.
+
+[문제] 위 문단을 읽고 추론한 내용으로 옳지 않은 것은 무엇인가요?',
+    'multiple_choice',
+    '["주말 동안에는 강한 비바람이 불어 야외 활동이 불가능할 것이다.", "주말에 야외로 나들이를 가기에 날씨가 좋을 것이다.", "환절기에는 면역력이 떨어져 감기에 걸릴 위험이 높아진다.", "계절 변화에 따른 체온 관리가 중요하다."]'::json,
+    '주말 동안에는 강한 비바람이 불어 야외 활동이 불가능할 것이다.',
+    '문단에서 내일도 쾌청하고 선선하여 날씨를 만끽하기 좋다고 하였으므로 강한 비바람이 분다는 추론은 잘못되었습니다.',
+    '내일 날씨 상태에 관한 캐스터의 설명("쾌청한 하늘")과 상반되는 보기를 찾으세요.',
+    'room',
+    'inference_judgment',
+    'inference_implication',
+    1
+),
+-- 19. structure / structure_order (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '[날씨] 주말까지 쾌청한 초가을…15도 안팎 일교차 유의'),
+    '[문단] (A) 낮부터는 기온이 빠르게 올라 예년 수준을 회복하고 있다.
+(B) 오늘 아침 서울은 13도선까지 내려가 올가을 들어 가장 쌀쌀했다.
+(C) 따라서 아침과 낮의 기온 차가 10도 이상으로 무척 크게 벌어진다.
+
+[문제] 위 내용의 논리적 흐름으로 가장 적절한 순서는 무엇인가요?',
+    'multiple_choice',
+    '["(B) -> (A) -> (C)", "(A) -> (B) -> (C)", "(C) -> (B) -> (A)", "(B) -> (C) -> (A)"]'::json,
+    '(B) -> (A) -> (C)',
+    '아침에 쌀쌀했던 기온(B)이 낮에 상승하면서(A), 결국 하루 동안의 일교차가 커진다(C)는 순서가 가장 자연스럽습니다.',
+    '아침 상황 -> 낮 상황 -> 그 결과(일교차 발생) 순서로 구성해 보세요.',
+    'room',
+    'structure',
+    'structure_order',
+    1
+),
+-- 20. structure / structure_sentence_insertion (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '[날씨] 주말까지 쾌청한 초가을…15도 안팎 일교차 유의'),
+    '[문단] 어제는 낮에도 서늘했습니다. [ ㄱ ] 현재는 예년 이맘때 수준을 회복하고 있습니다.
+
+[문제] [ ㄱ ] 위치에 들어갈 문맥상 가장 적절한 접속어는 무엇인가요?',
+    'multiple_choice',
+    '["하지만", "그래서", "왜냐하면", "게다가"]'::json,
+    '하지만',
+    '어제 낮의 서늘함과 달리 현재는 예년 수준을 회복했다는 대조적인 내용이 이어지므로 역접 접속어 ''하지만''이 가장 적절합니다.',
+    '어제 상황과 현재 상황 사이의 반대·대조 관계를 이어주는 접속어를 찾으세요.',
+    'room',
+    'structure',
+    'structure_sentence_insertion',
+    1
+);
+
+-- 기사(''추석 연휴엔 단풍보다 여행으로…올해 단풍 절정 평년보다 늦어 [여행&]'')는 이미 DB에 있음(V12/V15).
+-- 여기서는 그 기사에 문제 20개만 추가한다. news_id는 제목으로 조회한다.
+
+-- [dailyQuestions 1~10] (game_mode: 'daily_solo')
+INSERT INTO questions (
+    news_id, content, question_format, choices, answer, explanation, hint, game_mode, main_category, sub_category, level
+) VALUES
+-- 1. vocab / vocab_meaning (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '추석 연휴엔 단풍보다 여행으로…올해 단풍 절정 평년보다 늦어 [여행&]'),
+    '기사에 등장한 ''절정(絶頂)''의 의미로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["사물이나 현상의 상태가 가장 무르익거나 최고조에 달한 때", "어떤 일이 시작되기 바로 직전의 상태", "날씨가 맑아졌다가 다시 나빠지는 변덕스러운 시기", "사물이 원래 모습에서 완전히 시들어버린 상태"]'::json,
+    '사물이나 현상의 상태가 가장 무르익거나 최고조에 달한 때',
+    '절정은 산 전체의 나뭇잎이 가장 짙고 아름답게 물든 상태, 즉 최고조에 달한 때를 의미합니다.',
+    '단풍이 산 전체의 80%가량 물들어 가장 무르익은 시기를 생각해 보세요.',
+    'daily_solo',
+    'vocab',
+    'vocab_meaning',
+    1
+),
+-- 2. vocab / vocab_paraphrase (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '추석 연휴엔 단풍보다 여행으로…올해 단풍 절정 평년보다 늦어 [여행&]'),
+    '기사의 "기압계 변동성이 커 예단하긴 이르다"라는 문맥에서 ''예단(豫斷)하다''와 뜻이 가장 가까운 표현은 무엇인가요?',
+    'multiple_choice',
+    '["미리 판단하다", "뒤늦게 후회하다", "단단히 고정하다", "자세히 조사하다"]'::json,
+    '미리 판단하다',
+    '예단하다는 어떤 일의 결과를 미리 짐작하여 판단한다는 뜻입니다.',
+    '결과를 미리 확정하여 생각하는 것을 뜻합니다.',
+    'daily_solo',
+    'vocab',
+    'vocab_paraphrase',
+    1
+),
+-- 3. info_extraction / info_consistency (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '추석 연휴엔 단풍보다 여행으로…올해 단풍 절정 평년보다 늦어 [여행&]'),
+    '기상청 기준에 따르면 산 정상에서부터 아래로 20%가량 물들었을 때를 ''첫 단풍''이라고 봅니다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '◆ 연휴에 볼 수 있는 건 대청봉 일대뿐 단락에서 "산 정상에서부터 아래로 20%가량 물든 때를 첫 단풍"으로 본다고 명시되어 있으므로 O입니다.',
+    '기상청의 첫 단풍 정의 비율(20%)을 본문에서 찾아보세요.',
+    'daily_solo',
+    'info_extraction',
+    'info_consistency',
+    1
+),
+-- 4. info_extraction / info_evidence (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '추석 연휴엔 단풍보다 여행으로…올해 단풍 절정 평년보다 늦어 [여행&]'),
+    '기사에 따르면 단풍 전선은 하루에 약 몇 ㎞씩 남쪽으로 이동하나요?',
+    'multiple_choice',
+    '["5~10㎞", "20~25㎞", "40~50㎞", "100㎞ 이상"]'::json,
+    '20~25㎞',
+    '◆ 첫 단풍은 언제? 단락에서 "단풍은 하루에 약 20∼25㎞씩 남쪽으로 내려간다"라고 설명되어 있습니다.',
+    '단풍 전선의 이동 속도 수치(㎞)를 본문에서 찾으세요.',
+    'daily_solo',
+    'info_extraction',
+    'info_evidence',
+    1
+),
+-- 5. info_extraction / info_consistency (short_answer)
+(
+    (SELECT news_id FROM news_articles WHERE title = '추석 연휴엔 단풍보다 여행으로…올해 단풍 절정 평년보다 늦어 [여행&]'),
+    '행정안전부 통계에 따르면 2020~2024년 5년간 등산사고가 가장 많이 발생한 달은 몇 월인가요? (숫자만 작성)',
+    'short_answer',
+    '[]'::json,
+    '10',
+    '◆ 단풍철 두 달에 등산사고 4건 중 1건 단락에서 "10월이 5691건으로 가장 많았고"라고 명시되어 있습니다.',
+    '월별 등산사고 통계에서 사고 건수가 가장 많은 달을 확인해 보세요.',
+    'daily_solo',
+    'info_extraction',
+    'info_consistency',
+    1
+),
+-- 6. core_understanding / core_topic (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '추석 연휴엔 단풍보다 여행으로…올해 단풍 절정 평년보다 늦어 [여행&]'),
+    '이 기사의 핵심 주제로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["평년보다 늦어진 올해 단풍 시기 전망과 단풍철 산행 시 안전 주의 당부", "전국 주요 국립공원 등산로 전면 통제 및 단풍 축제 취소 소식", "지구 온난화로 인한 전국 산림의 수종 교체 및 산불 위험성 보고", "추석 연휴 기간 동안의 전국적인 도로 정체 및 대중교통 운행 안내"]'::json,
+    '평년보다 늦어진 올해 단풍 시기 전망과 단풍철 산행 시 안전 주의 당부',
+    '기사는 올해 첫 단풍 및 절정 시기가 평년보다 늦어진다는 예보와 함께 단풍철 산행 사고 예방을 당부하는 내용을 골자로 합니다.',
+    '단풍 시기 전망과 산행 안전 수칙을 다룬 전체 내용을 종합하세요.',
+    'daily_solo',
+    'core_understanding',
+    'core_topic',
+    1
+),
+-- 7. core_understanding / core_gist (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '추석 연휴엔 단풍보다 여행으로…올해 단풍 절정 평년보다 늦어 [여행&]'),
+    '올해 추석 연휴에 가족들과 모여 산 전체가 물든 단풍 구경을 하기 힘든 이유로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["첫 단풍 예상이 평년보다 늦고 산 전체 절정은 10월 이후에 시작되기 때문", "추석 연휴 동안 전국 모든 국립공원이 등산객 입산을 통제하기 때문", "강한 태풍이 상륙하여 전국 산간 지역의 단풍이 모두 떨어졌기 때문", "9월 중순부터 전국적인 폭설이 내려 단풍이 덮였기 때문"]'::json,
+    '첫 단풍 예상이 평년보다 늦고 산 전체 절정은 10월 이후에 시작되기 때문',
+    '본문에서는 첫 단풍 예상이 9월 말~10월 초이고 산 전체가 물드는 절정은 10월 중순 이후이므로 추석 연휴 단풍 구경은 이르다고 설명합니다.',
+    '추석 연휴 기간과 첫 단풍 및 절정 시기 간의 날짜 차이를 고려하세요.',
+    'daily_solo',
+    'core_understanding',
+    'core_gist',
+    1
+),
+-- 8. inference_judgment / inference_implication (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '추석 연휴엔 단풍보다 여행으로…올해 단풍 절정 평년보다 늦어 [여행&]'),
+    '낙엽수는 일 최저기온이 5도 아래로 떨어져야 잎이 물드므로, 9월 이후 기온이 평년보다 높으면 단풍 시기가 늦어진다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '◆ 절정은 설악산 10월 19일, 북한산 11월 1일 단락 마지막 부분에 "일 최저기온이 5도 아래로 떨어지기 시작해야 잎이 물들기 때문에 9월 이후 기온이 높을수록 단풍도 늦어진다"라고 언급되어 있으므로 O입니다.',
+    '기온과 단풍이 물드는 시기 사이의 관계를 나타낸 문장을 확인하세요.',
+    'daily_solo',
+    'inference_judgment',
+    'inference_implication',
+    1
+),
+-- 9. inference_judgment / inference_blank (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '추석 연휴엔 단풍보다 여행으로…올해 단풍 절정 평년보다 늦어 [여행&]'),
+    '다음 빈칸에 들어갈 가장 적절한 단어는 무엇인가요?
+"가을철 산행 시에는 조난 및 안전사고에 대비하여 해가 지기 전에 산행을 마치도록 시간을 넉넉히 두고, 만약의 사태에 대비해 휴대폰 (                      )와 비상 연락수단을 미리 점검해야 한다."',
+    'multiple_choice',
+    '["배터리", "손난로", "나침반", "삼각대"]'::json,
+    '배터리',
+    '기사 마지막 문단에서 "휴대전화 배터리와 비상 연락수단을 미리 점검하고"라고 안전 수칙을 권장하고 있습니다.',
+    '휴대전화를 지속적으로 사용하고 연락을 유지하기 위해 점검해야 하는 요소입니다.',
+    'daily_solo',
+    'inference_judgment',
+    'inference_blank',
+    1
+),
+-- 10. structure / structure_order (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '추석 연휴엔 단풍보다 여행으로…올해 단풍 절정 평년보다 늦어 [여행&]'),
+    '이 기사의 글 전개 순서로 가장 바르게 연결된 것은 무엇인가요?',
+    'multiple_choice',
+    '["추석 연휴 단풍 관람 전망 요약 -> 설악산 대청봉 단풍 현황 -> 기관별 첫 단풍 및 절정 예상 시기 -> 단풍철 등산 사고 통계 및 안전 수칙", "단풍철 등산 사고 통계 및 안전 수칙 -> 기관별 첫 단풍 및 절정 예상 시기 -> 설악산 대청봉 단풍 현황 -> 추석 연휴 단풍 관람 전망 요약", "설악산 대청봉 단풍 현황 -> 추석 연휴 단풍 관람 전망 요약 -> 단풍철 등산 사고 통계 및 안전 수칙 -> 기관별 첫 단풍 및 절정 예상 시기", "기관별 첫 단풍 및 절정 예상 시기 -> 단풍철 등산 사고 통계 및 안전 수칙 -> 추석 연휴 단풍 관람 전망 요약 -> 설악산 대청봉 단풍 현황"]'::json,
+    '추석 연휴 단풍 관람 전망 요약 -> 설악산 대청봉 단풍 현황 -> 기관별 첫 단풍 및 절정 예상 시기 -> 단풍철 등산 사고 통계 및 안전 수칙',
+    '기사는 추석 연휴 단풍 관람이 어렵다는 도입부 요약으로 시작해, 설악산 대청봉 상황, 두 민간 업체의 상세 첫 단풍·절정 예보, 그리고 등산 사고 관련 통계 및 안전 당부로 마무리됩니다.',
+    '소제목으로 구분된 각 파트의 핵심 주제가 어떤 순서로 배치되어 있는지 따라가 보세요.',
+    'daily_solo',
+    'structure',
+    'structure_order',
+    1
+),
+
+-- [gameQuestions 1~10] (game_mode: 'room')
+-- 11. vocab / vocab_meaning (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '추석 연휴엔 단풍보다 여행으로…올해 단풍 절정 평년보다 늦어 [여행&]'),
+    '[문단] 케이웨더는 9월 중순 기온이 평년과 비슷하겠지만 하순과 10월은 평년보다 높을 것으로 봤다. 낙엽수는 일 최저기온이 5도 아래로 떨어지기 시작해야 잎이 물들기 때문이다.
+
+[문제] 위 문단에서 ''낙엽수(落葉樹)''의 뜻으로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["계절에 따라 잎이 떨어지고 새로운 잎이 나는 나무", "일년 내내 푸른 잎을 유지하는 소나무 같은 나무", "물속이나 습지에서만 자라는 수생 식물", "열매를 맺지 않고 꽃만 피우는 관상용 나무"]'::json,
+    '계절에 따라 잎이 떨어지고 새로운 잎이 나는 나무',
+    '낙엽수는 가을이나 겨울에 잎이 떨어졌다가 봄에 새잎이 나는 나무를 뜻하며, 단풍이 드는 대표적인 나무들입니다.',
+    '가을이 되면 잎이 물들고 결국 떨어지는 나무를 의미합니다.',
+    'room',
+    'vocab',
+    'vocab_meaning',
+    1
+),
+-- 12. vocab / vocab_appropriateness (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '추석 연휴엔 단풍보다 여행으로…올해 단풍 절정 평년보다 늦어 [여행&]'),
+    '[문단] 해가 지기 전에 산행을 마칠 수 있도록 시간을 넉넉히 두는 것도 당부 사항이다.
+
+[문제] 위 문단의 ''산행(山行)''은 ''산을 오르거나 산속을 걷는 일''이라는 뜻으로 문맥상 바르게 쓰였습니다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '''산행''은 산을 오르거나 산길을 거니는 행위를 뜻하므로 문맥에 아주 적절합니다.',
+    '등산이나 산길을 걷는 행위를 나타내는 한자어입니다.',
+    'room',
+    'vocab',
+    'vocab_appropriateness',
+    1
+),
+-- 13. info_extraction / info_consistency (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '추석 연휴엔 단풍보다 여행으로…올해 단풍 절정 평년보다 늦어 [여행&]'),
+    '[문단] 케이웨더와 웨더아이 두 민간 기관이 모두 동일하게 본 것은 단풍 전선의 속도다. 단풍은 하루에 약 20∼25㎞씩 남쪽으로 내려간다.
+
+[문제] 위 문단에 따르면 두 기관은 단풍 전선이 남쪽으로 이동하는 속도에 대해 서로 다른 견해를 보였습니다. (O/X)',
+    'OX',
+    '[]'::json,
+    'X',
+    '문단에서 "두 기관이 같게 본 것은 단풍 전선의 속도다"라고 명시했으므로 서로 다른 견해를 보였다는 설명은 X입니다.',
+    '두 기관이 동일하게 판단한 항목이 무엇인지 문단에서 확인하세요.',
+    'room',
+    'info_extraction',
+    'info_consistency',
+    1
+),
+-- 14. info_extraction / info_evidence (short_answer)
+(
+    (SELECT news_id FROM news_articles WHERE title = '추석 연휴엔 단풍보다 여행으로…올해 단풍 절정 평년보다 늦어 [여행&]'),
+    '[문단] 2020∼2024년 5년간 등산사고 결과 424명이 숨지고 1만6852명이 다쳤으며 202명이 실종됐다.
+
+[문제] 이 기간 등산사고로 발생한 사망자 수는 총 몇 명인가요? (숫자만 작성)',
+    'short_answer',
+    '[]'::json,
+    '424',
+    '◆ 단풍철 두 달에 등산사고 4건 중 1건 단락에서 "이 사고로 424명이 숨지고"라고 기재되어 있습니다.',
+    '사고로 사망한(숨진) 사람 수치를 문단에서 찾아보세요.',
+    'room',
+    'info_extraction',
+    'info_evidence',
+    1
+),
+-- 15. core_understanding / core_topic (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '추석 연휴엔 단풍보다 여행으로…올해 단풍 절정 평년보다 늦어 [여행&]'),
+    '[문단] 단풍 절정은 첫 단풍이 든 뒤 2주쯤 지나 나타난다. 케이웨더는 설악산이 10월 19일, 북한산이 11월 1일쯤 가장 짙게 물들 것으로 봤다. 웨더아이는 오대산과 설악산을 10월 16∼25일로 봤다. 절정을 보려면 10월 셋째 주 이후 강원, 10월 말 이후 중부, 11월 둘째 주 남부 순으로 목적지를 잡아야 한다.
+
+[문제] 위 문단의 중심 내용으로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["주요 산 및 지역별 단풍 절정 예상 시기와 추천 방문 일정", "전국 주요 산의 입장료 인상 및 야간 산행 금지 안내", "기후 변화로 인한 단풍나무의 집단 시듦 현상 분석", "봄철 꽃구경을 위한 전국 주요 산의 개화 시기 비교"]'::json,
+    '주요 산 및 지역별 단풍 절정 예상 시기와 추천 방문 일정',
+    '문단은 산별, 지역별 단풍 절정 예상 날짜와 이에 맞춰 여행 목적지를 잡는 시기를 안내하고 있습니다.',
+    '문단에 제시된 산 이름들과 날짜 수치가 어떤 정보를 나타내는지 살펴보세요.',
+    'room',
+    'core_understanding',
+    'core_topic',
+    1
+),
+-- 16. core_understanding / core_title (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '추석 연휴엔 단풍보다 여행으로…올해 단풍 절정 평년보다 늦어 [여행&]'),
+    '[문단] 한편 단풍을 보러 산에 오르는 사람이 늘면 사고도 함께 늘어난다. 10월과 9월 두 달간 발생한 등산사고는 5년치 전체의 24.8%로, 등산사고 4건 중 1건이 단풍철에 일어난 셈이다. 지정된 등산로를 이용하고 해가 지기 전에 산행을 마쳐야 한다.
+
+[문제] 위 문단에 가장 어울리는 소제목은 무엇인가요?',
+    'multiple_choice',
+    '["단풍철에 집중되는 등산사고… 안전 수칙 준수 당부", "가을철 전국 산림 내 무단 야영 및 취사 행위 적발", "단풍철 맞아 신규 개설된 최단 등산 코스 소개", "전국 유명 국립공원 주변 맛집 및 숙박 시설 안내"]'::json,
+    '단풍철에 집중되는 등산사고… 안전 수칙 준수 당부',
+    '단풍철인 9~10월에 등산사고가 집중되므로 지정 등산로 이용 등 안전 수칙을 지켜야 한다는 점을 다룹니다.',
+    '등산 사고 통계와 안전 당부라는 두 가지 핵심 단어가 들어간 소제목을 찾으세요.',
+    'room',
+    'core_understanding',
+    'core_title',
+    1
+),
+-- 17. inference_judgment / inference_blank (short_answer)
+(
+    (SELECT news_id FROM news_articles WHERE title = '추석 연휴엔 단풍보다 여행으로…올해 단풍 절정 평년보다 늦어 [여행&]'),
+    '[문단] 같은 산이라도 정상부와 산 아래는 기온 차이로 인해 단풍이 물드는 시기가 2주 이상 벌어진다. 따라서 추석 연휴에 가족들과 함께 산 산책로를 걸으며 산 전체에 만발한 단풍을 기대하기는 ____.
+
+[문제] 맥락상 빈칸에 들어갈 두 글자 단어는 무엇인가요?',
+    'short_answer',
+    '[]'::json,
+    '어렵다',
+    '추석 연휴 시점에는 정상부 일부에만 단풍이 시작되고 산 전체 절정은 10월 이후이므로 단풍 구경이 "어렵다"(또는 힘들다)가 자연스럽습니다.',
+    '추석 연휴 시점과 산 전체 단풍 절정 시기 간의 차이를 생각해 보세요.',
+    'room',
+    'inference_judgment',
+    'inference_blank',
+    1
+),
+-- 18. inference_judgment / inference_implication (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '추석 연휴엔 단풍보다 여행으로…올해 단풍 절정 평년보다 늦어 [여행&]'),
+    '[문단] 민간 기상업체 케이웨더와 웨더아이가 내놓은 중부지방 및 남부지방의 첫 단풍 날짜 예측에는 차이가 존재한다. 남쪽으로 내려갈수록 두 예상의 차이는 더 벌어진다.
+
+[문제] 위 문단을 읽고 올바르게 추론한 것은 무엇인가요?',
+    'multiple_choice',
+    '["기상 예측 기관에 따라 날씨 및 기온 예측 모델이 달라 단풍 시기 전망에 차이가 날 수 있다.", "남부지방은 기온 변화가 전혀 없어 두 기관 모두 똑같은 날짜를 예측했다.", "모든 기상업체는 기상청 공식 데이터만 그대로 복사하여 발표한다.", "중부지방보다 남부지방의 단풍 시기를 맞히는 것이 훨씬 쉽다."]'::json,
+    '기상 예측 기관에 따라 날씨 및 기온 예측 모델이 달라 단풍 시기 전망에 차이가 날 수 있다.',
+    '기관마다 분석 모델이나 기온 전망치 기준이 달라 첫 단풍 및 절정 예상 날짜에 차이가 발생함을 추론할 수 있습니다.',
+    '서로 다른 기상 예측 기관의 결과가 차이 나는 이유를 생각해 보세요.',
+    'room',
+    'inference_judgment',
+    'inference_implication',
+    1
+),
+-- 19. structure / structure_order (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '추석 연휴엔 단풍보다 여행으로…올해 단풍 절정 평년보다 늦어 [여행&]'),
+    '[문단] (A) 이에 따라 강원 산간에서 시작한 단풍이 남부 지역에 닿기까지 한 달 넘게 걸린다.
+(B) 단풍은 하루에 약 20∼25㎞씩 남쪽으로 천천히 이동한다.
+(C) 따라서 같은 한국이라도 지역에 따라 단풍 절정 시기가 달라진다.
+
+[문제] 위 내용의 논리적 흐름으로 가장 적절한 순서는 무엇인가요?',
+    'multiple_choice',
+    '["(B) -> (A) -> (C)", "(A) -> (B) -> (C)", "(C) -> (B) -> (A)", "(B) -> (C) -> (A)"]'::json,
+    '(B) -> (A) -> (C)',
+    '단풍의 일일 이동 속도(B)로 인해 남부까지 가는 데 한 달이 걸리고(A), 그 결과 지역별 절정 시기가 차이 난다(C)는 원인-결과 흐름이 적절합니다.',
+    '이동 속도 원인 -> 이동 소요 시간 -> 최종 결과(지역별 절정 차이) 순서로 맞춰보세요.',
+    'room',
+    'structure',
+    'structure_order',
+    1
+),
+-- 20. structure / structure_sentence_insertion (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '추석 연휴엔 단풍보다 여행으로…올해 단풍 절정 평년보다 늦어 [여행&]'),
+    '[문단] 지난달 31일 대청봉 일대에서 단풍이 관측됐다. [ ㄱ ] 이것은 아직 기상청 기준의 공식적인 첫 단풍이 아니다.
+
+[문제] [ ㄱ ] 위치에 들어갈 문맥상 가장 적절한 접속어는 무엇인가요?',
+    'multiple_choice',
+    '["다만", "따라서", "게다가", "마침내"]'::json,
+    '다만',
+    '대청봉 단풍 관측 사실과 이것이 공식 첫 단풍은 아니라는 대조/보완 내용이 연결되므로 역접·제한의 접속어 ''다만''이 들어갑니다.',
+    '단풍 관측 사실과 공식 기준 미달이라는 제한적 사실을 이어주는 말을 고르세요.',
+    'room',
+    'structure',
+    'structure_sentence_insertion',
+    1
+);
+
+-- 기사(''아이폰18 프로 고객 잡아라…이통3사 사전예약 혜택 경쟁'')는 이미 DB에 있음(V12/V15).
+-- 여기서는 그 기사에 문제 20개만 추가한다. news_id는 제목으로 조회한다.
+
+-- [dailyQuestions 1~10] (game_mode: 'daily_solo')
+INSERT INTO questions (
+    news_id, content, question_format, choices, answer, explanation, hint, game_mode, main_category, sub_category, level
+) VALUES
+-- 1. vocab / vocab_meaning (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '아이폰18 프로 고객 잡아라…이통3사 사전예약 혜택 경쟁'),
+    '기사에 등장한 ''사전예약(事前預約)''의 의미로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["상품이 정식 출시되거나 서비스가 시작되기 전에 미리 구매를 약속하는 것", "제품을 다 사용한 후 정식으로 반납 절차를 진행하는 것", "중고 제품을 매장에 직접 들고 가 수리를 요청하는 것", "제품의 가격이 인하될 때까지 기다렸다가 구매하는 것"]'::json,
+    '상품이 정식 출시되거나 서비스가 시작되기 전에 미리 구매를 약속하는 것',
+    '사전예약은 어떤 상품이나 서비스가 세상에 정식으로 출시되기 전에 미리 신청하여 구매를 예약하는 행위를 뜻합니다.',
+    '제품이 정식 출시되기 전에 미리 신청해 두는 것을 생각해 보세요.',
+    'daily_solo',
+    'vocab',
+    'vocab_meaning',
+    1
+),
+-- 2. vocab / vocab_paraphrase (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '아이폰18 프로 고객 잡아라…이통3사 사전예약 혜택 경쟁'),
+    '기사의 "혜택을 내세웠다"에서 ''혜택(惠澤)''과 뜻이 가장 가까운 단어는 무엇인가요?',
+    'multiple_choice',
+    '["이득", "손실", "벌금", "의무"]'::json,
+    '이득',
+    '혜택은 할인이나 쿠폰 등 고객이 얻는 도움이나 이득을 의미합니다.',
+    '고객이 통신사로부터 받는 이로운 보상이나 할인 등을 의미합니다.',
+    'daily_solo',
+    'vocab',
+    'vocab_paraphrase',
+    1
+),
+-- 3. info_extraction / info_consistency (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '아이폰18 프로 고객 잡아라…이통3사 사전예약 혜택 경쟁'),
+    '아이폰18 프로 시리즈의 사전예약은 9월 12일부터 시작되며, 공식 출시는 9월 18일입니다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '1문단에 "사전예약은 12일부터 시작되며, 공식 출시는 18일이다"라고 명시되어 있으므로 O입니다.',
+    '1문단에서 사전예약 시작일과 정식 출시일을 확인하세요.',
+    'daily_solo',
+    'info_extraction',
+    'info_consistency',
+    1
+),
+-- 4. info_extraction / info_evidence (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '아이폰18 프로 고객 잡아라…이통3사 사전예약 혜택 경쟁'),
+    'KT의 단말 관리 서비스인 ''폰체인지_i18''을 이용할 경우, 2년 뒤 기존 단말을 반납하면 가입 당시 출고가의 최대 몇 %를 보장해주나요?',
+    'multiple_choice',
+    '["30%", "40%", "50%", "70%"]'::json,
+    '50%',
+    'KT 관련 3문단에서 "''폰체인지_i18''은 월 5000원으로 이용할 수 있으며, 2년 뒤 기존 단말을 반납하면 가입 당시 출고가의 최대 50%를 보장한다"라고 명시되어 있습니다.',
+    'KT의 단말 반납 보장 서비스 설명에서 보장 비율(%)을 찾아보세요.',
+    'daily_solo',
+    'info_extraction',
+    'info_evidence',
+    1
+),
+-- 5. info_extraction / info_consistency (short_answer)
+(
+    (SELECT news_id FROM news_articles WHERE title = '아이폰18 프로 고객 잡아라…이통3사 사전예약 혜택 경쟁'),
+    '애플 최초의 폴더블 아이폰인 ''아이폰 듀오''의 내부 디스플레이 크기는 몇 형(인치)인가요? (숫자와 소수점만 작성, 예: 6.1)',
+    'short_answer',
+    '[]'::json,
+    '7.6',
+    '마지막 문단에 "아이폰 듀오는 7.6형 내부 디스플레이와 5.4형 외부 디스플레이를 적용하고"라고 제시되어 있습니다.',
+    '기사 마지막 문단에서 아이폰 듀오의 내부 디스플레이 크기를 찾으세요.',
+    'daily_solo',
+    'info_extraction',
+    'info_consistency',
+    1
+),
+-- 6. core_understanding / core_topic (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '아이폰18 프로 고객 잡아라…이통3사 사전예약 혜택 경쟁'),
+    '이 기사의 핵심 주제로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["아이폰18 프로 출시를 앞둔 이동통신 3사의 사전예약 혜택 및 중고폰 보상 경쟁", "스마트폰 요금제 전면 폐지 및 기본료 무상 제공 정책 발표", "삼성전자 플래그십 신제품의 세계 시장 점유율 1위 달성 소식", "애플 앱스토어의 수수료 인하에 따른 국내 개발사 반응"]'::json,
+    '아이폰18 프로 출시를 앞둔 이동통신 3사의 사전예약 혜택 및 중고폰 보상 경쟁',
+    '기사는 아이폰18 프로 출시 일정에 맞춰 SKT, KT, LG유플러스 이동통신 3사가 마련한 할인, 제휴카드, 서비스 등 다양한 사전예약 혜택을 다루고 있습니다.',
+    '기사의 전체 내용이 통신 3사(SKT, KT, LGU+)의 사전예약 혜택에 집중되어 있음을 파악하세요.',
+    'daily_solo',
+    'core_understanding',
+    'core_topic',
+    1
+),
+-- 7. core_understanding / core_gist (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '아이폰18 프로 고객 잡아라…이통3사 사전예약 혜택 경쟁'),
+    'LG유플러스가 아이폰18 프로 사전예약 고객에게 차별화 포인트로 제시한 AI 통화 서비스의 이름은 무엇인가요?',
+    'multiple_choice',
+    '["익시오", "T전화", "에이닷", "빅스비"]'::json,
+    '익시오',
+    'LG유플러스 관련 3문단에서 "개통 고객은 AI 통화앱 ''익시오''를 통해 통화 녹음·요약과 해외 음성통화를 지원하는 ''로밍콜''을 이용할 수 있다"라고 설명합니다.',
+    'LG유플러스 항목에서 AI 통화앱의 명칭을 찾아보세요.',
+    'daily_solo',
+    'core_understanding',
+    'core_gist',
+    1
+),
+-- 8. inference_judgment / inference_implication (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '아이폰18 프로 고객 잡아라…이통3사 사전예약 혜택 경쟁'),
+    '아이폰18 프로 사전예약 시 이동통신사 제휴카드를 활용하고 전월 실적 조건을 충족하면 단말 및 요금 할인 폭을 더 크게 넓힐 수 있다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '이통 3사 모두 제휴카드 결제 및 전월 실적 달성 시 추가 할인 및 캐시백 혜택을 크게 제공한다고 설명하고 있으므로 O입니다.',
+    '통신 3사가 제공하는 제휴카드 활용 혜택을 종합적으로 생각해 보세요.',
+    'daily_solo',
+    'inference_judgment',
+    'inference_implication',
+    1
+),
+-- 9. inference_judgment / inference_blank (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '아이폰18 프로 고객 잡아라…이통3사 사전예약 혜택 경쟁'),
+    '다음 빈칸에 들어갈 가장 적절한 단어는 무엇인가요?
+"LG유플러스는 사전예약 개통 고객에게 AI 통화앱 익시오를 제공하여 보이스피싱 위험을 AI가 실시간으로 탐지하는 (                      ) 기능 등 차별화된 서비스를 선보인다."',
+    'multiple_choice',
+    '["보이스피싱 금융안심", "무료 와이파이 자동연결", "배터리 수명 연장", "화면 자동 캡처"]'::json,
+    '보이스피싱 금융안심',
+    'LG유플러스 단락에서 "보이스피싱 위험을 AI가 실시간으로 탐지하는 ''보이스피싱 금융안심'' 기능도 제공한다"라고 나와 있습니다.',
+    'AI가 실시간으로 보이스피싱 위험을 탐지해 주는 기능의 명칭입니다.',
+    'daily_solo',
+    'inference_judgment',
+    'inference_blank',
+    1
+),
+-- 10. structure / structure_order (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '아이폰18 프로 고객 잡아라…이통3사 사전예약 혜택 경쟁'),
+    '이 기사의 글 전개 순서로 가장 바르게 연결된 것은 무엇인가요?',
+    'multiple_choice',
+    '["사전예약 및 출시 일정 공개 -> SK텔레콤 혜택 -> KT 혜택 -> LG유플러스 혜택 -> 아이폰 듀오 예약 및 스펙 정보", "SK텔레콤 혜택 -> KT 혜택 -> LG유플러스 혜택 -> 사전예약 및 출시 일정 공개 -> 아이폰 듀오 예약 및 스펙 정보", "아이폰 듀오 예약 및 스펙 정보 -> 사전예약 및 출시 일정 공개 -> SK텔레콤 혜택 -> KT 혜택 -> LG유플러스 혜택", "사전예약 및 출시 일정 공개 -> 아이폰 듀오 예약 및 스펙 정보 -> LG유플러스 혜택 -> KT 혜택 -> SK텔레콤 혜택"]'::json,
+    '사전예약 및 출시 일정 공개 -> SK텔레콤 혜택 -> KT 혜택 -> LG유플러스 혜택 -> 아이폰 듀오 예약 및 스펙 정보',
+    '기사는 서두에 사전예약/출시 일정을 밝힌 후 SKT, KT, LGU+ 3사의 혜택을 차례로 서술하고 마지막에 폴더블 제품인 아이폰 듀오 관련 소식을 덧붙입니다.',
+    '문단별로 다루고 있는 통신사 순서와 마지막 모델 정보를 순서대로 정리해 보세요.',
+    'daily_solo',
+    'structure',
+    'structure_order',
+    1
+),
+
+-- [gameQuestions 1~10] (game_mode: 'room')
+-- 11. vocab / vocab_meaning (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '아이폰18 프로 고객 잡아라…이통3사 사전예약 혜택 경쟁'),
+    '[문단] 기존 단말을 반납하면 ''민팃 ALL 보상''과 ''쓰던 폰 추가 보상''을 통해 최대 15만원을 추가로 받을 수 있다.
+
+[문제] 위 문단에서 ''단말(端末)''의 의미로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["통신망 끝에 연결되어 데이터를 주고받는 스마트폰 등의 기기", "인터넷 통신망을 설치하는 지상 전신주", "스마트폰 내부를 구성하는 반도체 회로판", "무선 통신 데이터를 전달하는 중계 안테나"]'::json,
+    '통신망 끝에 연결되어 데이터를 주고받는 스마트폰 등의 기기',
+    '단말(단말기)은 사용자가 통신망에 접속하여 사용하는 스마트폰, 패드 등의 통신 기기를 뜻합니다.',
+    '사용자가 손에 쥐고 사용하는 휴대폰 기기를 의미합니다.',
+    'room',
+    'vocab',
+    'vocab_meaning',
+    1
+),
+-- 12. vocab / vocab_appropriateness (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '아이폰18 프로 고객 잡아라…이통3사 사전예약 혜택 경쟁'),
+    '[문단] LG유플러스는 온라인 전용 할인과 AI 통화 서비스를 차별화 포인트로 내세웠다.
+
+[문제] 위 문단의 ''차별화(差別化)''는 ''다른 것과 구별되는 독특한 특징이나 우위를 만드는 것''이라는 뜻으로 문맥상 적절하게 쓰였습니다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '''차별화''는 경쟁사와 구별되는 고유한 강점이나 차이점을 부각하는 것을 뜻하므로 문맥에 바르게 쓰였습니다.',
+    '다른 통신사와 차이를 두는 개성 있는 강점이라는 의미입니다.',
+    'room',
+    'vocab',
+    'vocab_appropriateness',
+    1
+),
+-- 13. info_extraction / info_consistency (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '아이폰18 프로 고객 잡아라…이통3사 사전예약 혜택 경쟁'),
+    '[문단] 애플 최초의 폴더블 아이폰인 아이폰 듀오는 10월 16일부터 사전예약을 시작해 23일 출시됩니다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '마지막 문단에 "아이폰 듀오는 10월 16일부터 사전예약을 시작해 23일 출시된다"라고 제시되어 있으므로 O입니다.',
+    '기사의 마지막 문단 첫 문장을 확인해 보세요.',
+    'room',
+    'info_extraction',
+    'info_consistency',
+    1
+),
+-- 14. info_extraction / info_evidence (short_answer)
+(
+    (SELECT news_id FROM news_articles WHERE title = '아이폰18 프로 고객 잡아라…이통3사 사전예약 혜택 경쟁'),
+    '[문단] SK텔레콤은 사전예약 후 개통한 고객에게 전용 T멤버십 ''클럽 아이폰18 프로''를 제공한다. 구글 AI Plus(400GB) 2개월과 티빙 광고형 스탠다드 4개월 이용권을 받을 수 있다.
+
+[문제] 티빙 광고형 스탠다드 이용권은 몇 개월 제공되나요? (숫자만 작성)',
+    'short_answer',
+    '[]'::json,
+    '4',
+    'SK텔레콤 관련 문단에서 "티빙 광고형 스탠다드 4개월 이용권을 받을 수 있고"라고 제시되어 있습니다.',
+    'SKT 혜택 중 티빙 이용권의 제공 기간(개월)을 확인하세요.',
+    'room',
+    'info_extraction',
+    'info_evidence',
+    1
+),
+-- 15. core_understanding / core_topic (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '아이폰18 프로 고객 잡아라…이통3사 사전예약 혜택 경쟁'),
+    '[문단] KT는 요금제와 단말 관리 서비스를 묶은 혜택을 내세웠다. ''초이스 더블'' 요금제에 가입하면 유튜브 프리미엄 라이트, 넷플릭스, Google AI Plus, 에어팟 프로3 등 콘텐츠·AI·디바이스 혜택 가운데 원하는 조합을 선택할 수 있다.
+
+[문제] 위 문단의 중심 내용으로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["KT의 요금제 결합 혜택 및 고객 선택형 콘텐츠·디바이스 제공 안내", "KT의 전국 5G 기지국 무료 증설 계획 발표", "유튜브 및 넷플릭스의 요금 인상에 따른 통신사 반발", "KT 알뜰폰 요금제의 가입자 수 급증 현상 분석"]'::json,
+    'KT의 요금제 결합 혜택 및 고객 선택형 콘텐츠·디바이스 제공 안내',
+    '문단은 KT의 ''초이스 더블'' 요금제를 통해 고객이 원하는 콘텐츠, AI, 디바이스 혜택 조합을 자유롭게 고를 수 있음을 설명합니다.',
+    'KT가 제안하는 요금제 결합 선택 혜택에 주목하세요.',
+    'room',
+    'core_understanding',
+    'core_topic',
+    1
+),
+-- 16. core_understanding / core_title (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '아이폰18 프로 고객 잡아라…이통3사 사전예약 혜택 경쟁'),
+    '[문단] 한편 아이폰 듀오는 10월16일부터 사전예약을 시작해 23일 출시된다. 애플 최초의 폴더블 아이폰인 아이폰 듀오는 7.6형 내부 디스플레이와 5.4형 외부 디스플레이를 적용하고 A20 Pro 칩을 탑재했다.
+
+[문제] 위 문단에 가장 어울리는 소제목은 무엇인가요?',
+    'multiple_choice',
+    '["애플 최초의 폴더블폰 ''아이폰 듀오''… 10월 사전예약 및 주요 스펙", "아이폰 단종 공식 발표… 신형 폴더블 전면 취소", "보급형 스마트폰 시장 확대를 위한 애플의 가성비 전략", "아이폰 듀오의 화면 결함 발생에 따른 전량 리콜 결정"]'::json,
+    '애플 최초의 폴더블폰 ''아이폰 듀오''… 10월 사전예약 및 주요 스펙',
+    '문단은 애플의 첫 폴더블 스마트폰인 아이폰 듀오의 출시 일정과 화면 크기, 칩셋 등 핵심 사양을 소개합니다.',
+    '폴더블폰 ''아이폰 듀오''의 특징과 출시 일정이 포함된 제목을 고르세요.',
+    'room',
+    'core_understanding',
+    'core_title',
+    1
+),
+-- 17. inference_judgment / inference_blank (short_answer)
+(
+    (SELECT news_id FROM news_articles WHERE title = '아이폰18 프로 고객 잡아라…이통3사 사전예약 혜택 경쟁'),
+    '[문단] LG유플러스는 U+공식온라인스토어 사전예약 고객을 위해 신제품을 출시일 아침에 빠르게 받아볼 수 있는 ''____'' 서비스를 제공한다.
+
+[문제] 맥락상 빈칸에 들어갈 네 글자 단어는 무엇인가요?',
+    'short_answer',
+    '[]'::json,
+    '아침배송',
+    'LG유플러스 문단 마지막 부분에서 "출시일 아침 단말을 받아볼 수 있는 ''아침배송'' 서비스도 제공한다"라고 명시되어 있습니다.',
+    '출시일 아침에 단말기를 전달해 주는 서비스 이름입니다.',
+    'room',
+    'inference_judgment',
+    'inference_blank',
+    1
+),
+-- 18. inference_judgment / inference_implication (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '아이폰18 프로 고객 잡아라…이통3사 사전예약 혜택 경쟁'),
+    '[문단] SK텔레콤, KT, LG유플러스 모두 사전예약 고객을 유치하기 위해 기존 단말 반납 보상 혜택, 제휴카드 할인, 온라인 전용 쿠폰 등을 다채롭게 제시하고 있다.
+
+[문제] 위 문단을 통해 추론할 수 있는 통신 시장의 상황으로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["이통3사가 프리미엄 신형 아이폰 고객을 선점하기 위해 치열한 마케팅 경쟁을 벌이고 있다.", "이동통신 시장에서 아이폰 구매 수요가 완전히 사라져 사전예약 이벤트가 축소되었다.", "통신사들은 신규 가입자보다 기존 단말기를 계속 사용하는 고객에게만 혜택을 집중한다.", "제휴카드 할인 혜택이 전면 금지되어 통신사들의 마케팅 수단이 대폭 감소했다."]'::json,
+    '이통3사가 프리미엄 신형 아이폰 고객을 선점하기 위해 치열한 마케팅 경쟁을 벌이고 있다.',
+    '3사 모두 신형 아이폰 출시 일정에 맞춰 파격적인 할인과 보상 혜택을 내세운 것은 신규 및 변경 고객을 선점하기 위한 경쟁임을 알 수 있습니다.',
+    '다양한 혜택을 다투어 공개하는 통신사들의 의도를 생각해 보세요.',
+    'room',
+    'inference_judgment',
+    'inference_implication',
+    1
+),
+-- 19. structure / structure_order (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '아이폰18 프로 고객 잡아라…이통3사 사전예약 혜택 경쟁'),
+    '[문단] (A) 애플 최초의 폴더블폰인 아이폰 듀오는 10월 16일부터 사전예약을 시작한다.
+(B) 이에 앞서 아이폰18 프로 시리즈 사전예약이 9월 12일부터 시작된다.
+(C) 이에 맞춰 이통3사는 9월 11일 각사의 사전예약 혜택을 경쟁적으로 공개했다.
+
+[문제] 시간적 흐름에 맞춘 가장 적절한 순서는 무엇인가요?',
+    'multiple_choice',
+    '["(C) -> (B) -> (A)", "(A) -> (B) -> (C)", "(B) -> (C) -> (A)", "(C) -> (A) -> (B)"]'::json,
+    '(C) -> (B) -> (A)',
+    '9월 11일 혜택 공개(C) -> 9월 12일 아이폰18 프로 사전예약(B) -> 10월 16일 아이폰 듀오 사전예약(A) 순서로 진행됩니다.',
+    '날짜 순서(9월 11일 -> 9월 12일 -> 10월 16일)를 확인해 보세요.',
+    'room',
+    'structure',
+    'structure_order',
+    1
+),
+-- 20. structure / structure_sentence_insertion (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '아이폰18 프로 고객 잡아라…이통3사 사전예약 혜택 경쟁'),
+    '[문단] KT 다이렉트샵에선 최대 32% 요금할인과 24개월 무이자 할부를 지원한다. [ ㄱ ] Y덤 고객 2000명에게는 한정판 굿즈를 추첨 제공한다.
+
+[문제] [ ㄱ ] 위치에 들어갈 문맥상 가장 적절한 접속어는 무엇인가요?',
+    'multiple_choice',
+    '["또한", "그러나", "왜냐하면", "반면에"]'::json,
+    '또한',
+    'KT 다이렉트샵의 요금 및 할부 할인 혜택에 더해, 특정 고객 대상 굿즈 추첨 혜택을 추가로 설명하고 있으므로 순접/첨가의 접속어 ''또한''이 적절합니다.',
+    '앞선 혜택에 추가적인 이벤트를 덧붙일 때 쓰는 연결어를 찾으세요.',
+    'room',
+    'structure',
+    'structure_sentence_insertion',
+    1
+);
+
+-- 기사(''애니브릿지, 퓨리오사AI와 함께 NPU 기반 엔터프라이즈 AI 에이전트 플랫폼 개발 착수'')는 이미 DB에 있음(V12/V15).
+-- 여기서는 그 기사에 문제 20개만 추가한다. news_id는 제목으로 조회한다.
+
+-- [dailyQuestions 1~10] (game_mode: 'daily_solo')
+INSERT INTO questions (
+    news_id, content, question_format, choices, answer, explanation, hint, game_mode, main_category, sub_category, level
+) VALUES
+-- 1. vocab / vocab_meaning (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '애니브릿지, 퓨리오사AI와 함께 NPU 기반 엔터프라이즈 AI 에이전트 플랫폼 개발 착수'),
+    '기사에 등장한 ''PoC(Proof of Concept)''의 의미로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["새로운 기술이나 아이디어가 실제로 실현 가능한지 검증하는 단계", "완제품을 대량 생산하여 전 세계 시장에 판매하는 단계", "기업의 주식을 증권 시장에 공식적으로 상장하는 절차", "고장 난 제품을 무료로 수리해 주는 서비스 보증 기간"]'::json,
+    '새로운 기술이나 아이디어가 실제로 실현 가능한지 검증하는 단계',
+    'PoC(개념 검증)는 새로운 기술이나 아이디어를 도입하기 전에 실제 환경에서 적용 가능성과 효과를 타당성 있게 검증해 보는 단계를 뜻합니다.',
+    '기술이나 개념의 실현 가능성을 직접 검증해 보는 단계를 생각해 보세요.',
+    'daily_solo',
+    'vocab',
+    'vocab_meaning',
+    1
+),
+-- 2. vocab / vocab_paraphrase (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '애니브릿지, 퓨리오사AI와 함께 NPU 기반 엔터프라이즈 AI 에이전트 플랫폼 개발 착수'),
+    '기사의 "상용화가 확대되고 있다"에서 ''상용화(商用化)''와 뜻이 가장 가까운 표현은 무엇인가요?',
+    'multiple_choice',
+    '["일상적인 상품으로 만들어 시중에 판매함", "학술적인 연구 목적으로 무료 배포함", "정부의 허가를 받아 비공개로 보관함", "해외로 기술을 전량 무상 이전함"]'::json,
+    '일상적인 상품으로 만들어 시중에 판매함',
+    '상용화는 연구·개발한 기술을 실제 상품으로 만들어 시장에서 유상으로 거래되게 하는 것을 의미합니다.',
+    '기술을 상품으로 만들어 시장에서 판매할 수 있게 만드는 것입니다.',
+    'daily_solo',
+    'vocab',
+    'vocab_paraphrase',
+    1
+),
+-- 3. info_extraction / info_consistency (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '애니브릿지, 퓨리오사AI와 함께 NPU 기반 엔터프라이즈 AI 에이전트 플랫폼 개발 착수'),
+    '애니브릿지의 박종세 대표는 한국과학기술원(KAIST) 전산학부 교수를 겸임하고 있습니다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '3문단에 "한국과학기술원(KAIST) 전산학부 교수인 박종세 대표를 중심으로"라고 명시되어 있으므로 O입니다.',
+    '애니브릿지 박종세 대표의 이력을 3문단에서 확인해 보세요.',
+    'daily_solo',
+    'info_extraction',
+    'info_consistency',
+    1
+),
+-- 4. info_extraction / info_evidence (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '애니브릿지, 퓨리오사AI와 함께 NPU 기반 엔터프라이즈 AI 에이전트 플랫폼 개발 착수'),
+    '퓨리오사AI가 개발한 2세대 AI 추론 가속기 제품의 이름은 무엇인가요?',
+    'multiple_choice',
+    '["RNGD(레니게이드)", "A100", "H100", "Gaudi3"]'::json,
+    'RNGD(레니게이드)',
+    '2문단에서 "퓨리오사AI의 2세대 AI 추론 가속기 ''RNGD(레니게이드)''"라고 명시되어 있습니다.',
+    '퓨리오사AI의 2세대 추론 가속기 명칭을 기사 전반부에서 찾아보세요.',
+    'daily_solo',
+    'info_extraction',
+    'info_evidence',
+    1
+),
+-- 5. info_extraction / info_consistency (short_answer)
+(
+    (SELECT news_id FROM news_articles WHERE title = '애니브릿지, 퓨리오사AI와 함께 NPU 기반 엔터프라이즈 AI 에이전트 플랫폼 개발 착수'),
+    '퓨리오사AI의 RNGD 가속기가 고성능·고효율 AI 추론을 지원하기 위해 기반으로 삼은 독자적인 아키텍처의 영문 약자(3글자)는 무엇인가요?',
+    'short_answer',
+    '[]'::json,
+    'TCP',
+    '4문단에 "독자적인 TCP(Tensor Contraction Processor) 아키텍처를 기반으로"라고 명시되어 있습니다.',
+    '4문단에서 괄호 안의 영문 3글자 약자를 찾아보세요.',
+    'daily_solo',
+    'info_extraction',
+    'info_consistency',
+    1
+),
+-- 6. core_understanding / core_topic (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '애니브릿지, 퓨리오사AI와 함께 NPU 기반 엔터프라이즈 AI 에이전트 플랫폼 개발 착수'),
+    '이 기사의 핵심 주제로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["애니브릿지와 퓨리오사AI의 NPU 기반 엔터프라이즈 AI 에이전트 플랫폼 공동 개발 협력", "글로벌 GPU 제조사들의 가격 인상에 따른 국내 스타트업의 대응책", "국내 대학 연구진의 생성형 AI 기반 무인 자율주행 알고리즘 개발 소식", "국가 차원의 데이터센터 전력 소비 절감 규제안 발표"]'::json,
+    '애니브릿지와 퓨리오사AI의 NPU 기반 엔터프라이즈 AI 에이전트 플랫폼 공동 개발 협력',
+    '기사는 AI 인프라 스타트업 애니브릿지와 NPU 기업 퓨리오사AI가 손잡고 NPU 기반의 기업용 AI 에이전트 플랫폼을 공동 개발·고도화한다는 내용을 핵심으로 다룹니다.',
+    '두 기업의 협력 내용과 개발 대상인 플랫폼에 초점을 맞추세요.',
+    'daily_solo',
+    'core_understanding',
+    'core_topic',
+    1
+),
+-- 7. core_understanding / core_gist (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '애니브릿지, 퓨리오사AI와 함께 NPU 기반 엔터프라이즈 AI 에이전트 플랫폼 개발 착수'),
+    '양사가 이번 협력을 통해 기업용 AI 에이전트 도입 장벽을 낮추고자 선택한 핵심 방식은 무엇인가요?',
+    'multiple_choice',
+    '["하드웨어와 소프트웨어의 동시 최적화", "해외 대기업 가속기 무료 배포", "클라우드 서비스 이용료의 대폭 인하", "기존 데이터센터의 전면 철거 및 신축"]'::json,
+    '하드웨어와 소프트웨어의 동시 최적화',
+    '2문단 부제목 및 6문단에서 "하드웨어와 소프트웨어를 함께 최적화하는 방식으로 기업용 AI 에이전트 도입 장벽을 낮춘다"고 설명합니다.',
+    '하드웨어(NPU)와 소프트웨어(런타임)를 함께 어떻게 조율하는지 생각해 보세요.',
+    'daily_solo',
+    'core_understanding',
+    'core_gist',
+    1
+),
+-- 8. inference_judgment / inference_implication (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '애니브릿지, 퓨리오사AI와 함께 NPU 기반 엔터프라이즈 AI 에이전트 플랫폼 개발 착수'),
+    '최근 기업들이 생성형 AI를 도입할 때 단순 모델 성능뿐만 아니라 인프라 운영 비용과 안정성도 주요 요인으로 고려하고 있다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '6문단에서 "기업은 모델 성능뿐 아니라 인프라 비용과 안정적인 운영까지 함께 고려해야 하는 국면으로 접어들고 있다"라고 언급되어 있으므로 O입니다.',
+    '6문단의 생성형 AI 서비스 활용 변화 양상을 참고하세요.',
+    'daily_solo',
+    'inference_judgment',
+    'inference_implication',
+    1
+),
+-- 9. inference_judgment / inference_blank (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '애니브릿지, 퓨리오사AI와 함께 NPU 기반 엔터프라이즈 AI 에이전트 플랫폼 개발 착수'),
+    '다음 빈칸에 들어갈 가장 적절한 단어는 무엇인가요?
+"애니브릿지는 특정 하드웨어에 대한 (                      )을/를 낮춘 공통 인터페이스를 통해 기업이 생성형 AI 서비스를 보다 효율적이고 안정적으로 운영하도록 돕는다."',
+    'multiple_choice',
+    '["종속성", "독립성", "호환성", "보안성"]'::json,
+    '종속성',
+    '3문단에서 "특정 하드웨어에 대한 종속성을 낮춘 공통 인터페이스와 워크로드 기반 최적화를 통해"라고 기술되어 있습니다.',
+    '특정 하드웨어에 얽매이지 않도록 줄여주는 성질을 나타내는 단어입니다.',
+    'daily_solo',
+    'inference_judgment',
+    'inference_blank',
+    1
+),
+-- 10. structure / structure_order (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '애니브릿지, 퓨리오사AI와 함께 NPU 기반 엔터프라이즈 AI 에이전트 플랫폼 개발 착수'),
+    '기사의 전체 내용 흐름을 순서대로 바르게 요약한 것은 무엇인가요?',
+    'multiple_choice',
+    '["애니브릿지-퓨리오사AI 협약 체결 -> 양사의 주요 역량 및 기술 소개 -> 협력의 핵심 범위 및 기대 효과 -> 박종세 대표의 소감", "박종세 대표의 소감 -> 애니브릿지 회사의 단독 발표 -> 퓨리오사AI의 기술 인수 -> 해외 사업 진출 계획", "NPU 시장의 몰락 -> 양사의 협약 파기 소식 -> 퓨리오사AI 기술 소개 -> AI 서비스의 비용 증가 문제", "생성형 AI의 한계점 지적 -> NPU 개발 취소 -> 하드웨어 무상 지원 공고 -> 고객 PoC 실패 사례"]'::json,
+    '애니브릿지-퓨리오사AI 협약 체결 -> 양사의 주요 역량 및 기술 소개 -> 협력의 핵심 범위 및 기대 효과 -> 박종세 대표의 소감',
+    '기사는 협약 소식을 먼저 알리고, 각 사의 기술(애니브릿지/RNGD)과 구체적 협력 내용, 도입 효과를 설명한 뒤 대표의 한마디로 마무리됩니다.',
+    '기사의 단락별 순서를 차례대로 점검해 보세요.',
+    'daily_solo',
+    'structure',
+    'structure_order',
+    1
+),
+
+-- [gameQuestions 1~10] (game_mode: 'room')
+-- 11. vocab / vocab_meaning (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '애니브릿지, 퓨리오사AI와 함께 NPU 기반 엔터프라이즈 AI 에이전트 플랫폼 개발 착수'),
+    '[문단] 애니브릿지는 GPU, NPU, PIM 등 다양한 AI 가속기를 서비스 특성에 맞춰 활용할 수 있도록 멀티 가속기 LLM 서빙 런타임과 기업용 AI 에이전트 플랫폼을 개발하는 AI 스타트업이다.
+
+[문제] 위 문단에서 ''런타임(Runtime)''의 의미로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["프로그램이 실제로 실행되고 동작하는 시간이나 환경", "컴퓨터 부품을 제조하는 데 걸리는 공정 시간", "신제품 출시 전 사전 예약 신청을 받는 사이트", "데이터베이스를 백업하는 데 소요되는 점검 시간"]'::json,
+    '프로그램이 실제로 실행되고 동작하는 시간이나 환경',
+    '런타임(Runtime)은 컴퓨터 과학에서 프로그램이 구동되어 실제 실행되는 구동 환경 또는 그 실행 시간 단계를 의미합니다.',
+    '프로그램이 켜져서 동작하는 실행 환경을 떠올려 보세요.',
+    'room',
+    'vocab',
+    'vocab_meaning',
+    1
+),
+-- 12. vocab / vocab_appropriateness (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '애니브릿지, 퓨리오사AI와 함께 NPU 기반 엔터프라이즈 AI 에이전트 플랫폼 개발 착수'),
+    '[문단] 양사는 기술 연동에 그치지 않고 실제 고객 환경에서 성능과 비용 효율을 검증하고 공동 레퍼런스를 확보하는 데까지 협력을 확대할 계획이다.
+
+[문제] 위 문단의 ''레퍼런스(Reference)''는 시장이나 고객에게 기술력을 입증할 수 있는 ''실제 적용/참조 사례''라는 뜻으로 문맥상 적절하게 쓰였습니다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '''레퍼런스''는 IT 업계에서 고객 구축 및 성공 사례(참조 모델)를 뜻하는 말로 문맥에 적절히 쓰였습니다.',
+    '실제 고객사에 적용해 거둔 성공적인 구축 사례나 참조 모델을 뜻합니다.',
+    'room',
+    'vocab',
+    'vocab_appropriateness',
+    1
+),
+-- 13. info_extraction / info_consistency (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '애니브릿지, 퓨리오사AI와 함께 NPU 기반 엔터프라이즈 AI 에이전트 플랫폼 개발 착수'),
+    '[문단] 애니브릿지와 퓨리오사AI의 협력 범위에는 클라우드 기반 서비스 개발과 실증, 고객 적용 및 PoC 등이 포함됩니다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '5문단에서 "협력 범위에는 ... 클라우드 기반 서비스 개발과 실증, 고객 적용 및 PoC, 공동 레퍼런스와 사업화 기회 발굴 등이 포함된다"라고 제시되어 있습니다.',
+    '5문단의 협력 범위 내용을 살펴보세요.',
+    'room',
+    'info_extraction',
+    'info_consistency',
+    1
+),
+-- 14. info_extraction / info_evidence (short_answer)
+(
+    (SELECT news_id FROM news_articles WHERE title = '애니브릿지, 퓨리오사AI와 함께 NPU 기반 엔터프라이즈 AI 에이전트 플랫폼 개발 착수'),
+    '[문단] 퓨리오사AI는 RNGD 활용과 최적화를 위한 기술 정보와 개발 환경, 기술 지원을 제공하고, 애니브릿지는 이를 기반으로 AI 에이전트 워크로드에 최적화된 ____와 응용 솔루션을 개발·고도화한다.
+
+[문제] 위 빈칸에 들어갈 3음절(한글) 용어는 무엇인가요?',
+    'short_answer',
+    '[]'::json,
+    '런타임',
+    '7문단에서 "애니브릿지는 이를 기반으로 AI 에이전트 워크로드에 최적화된 런타임과 응용 솔루션을 개발·고도화한다"라고 기술되어 있습니다.',
+    '프로그램 실행 환경을 뜻하는 3글자 단어입니다.',
+    'room',
+    'info_extraction',
+    'info_evidence',
+    1
+),
+-- 15. core_understanding / core_topic (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '애니브릿지, 퓨리오사AI와 함께 NPU 기반 엔터프라이즈 AI 에이전트 플랫폼 개발 착수'),
+    '[문단] 애니브릿지는 GPU, NPU, PIM 등 다양한 AI 가속기를 서비스 특성에 맞춰 활용할 수 있도록 멀티 가속기 LLM 서빙 런타임과 기업용 AI 에이전트 플랫폼을 개발하는 AI 스타트업이다.
+
+[문제] 위 문단에서 설명하는 애니브릿지의 핵심 사업 및 개발 영역은 무엇인가요?',
+    'multiple_choice',
+    '["멀티 가속기 지원 서빙 런타임 및 기업용 AI 에이전트 플랫폼 개발", "독자적 반도체 공장 설립을 통한 NPU 하드웨어 직접 양산", "스마트폰용 소셜 네트워크 서비스 앱 개발 및 운영", "클라우드 데이터센터의 물리적 전기 설비 유지 보수"]'::json,
+    '멀티 가속기 지원 서빙 런타임 및 기업용 AI 에이전트 플랫폼 개발',
+    '문단은 애니브릿지가 다양한 가속기를 지원하는 서빙 런타임과 기업용 AI 에이전트 플랫폼을 개발하는 AI 인프라 스타트업임을 명확히 서술합니다.',
+    '애니브릿지가 무엇을 개발하는 스타트업인지 파악하세요.',
+    'room',
+    'core_understanding',
+    'core_topic',
+    1
+),
+-- 16. core_understanding / core_title (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '애니브릿지, 퓨리오사AI와 함께 NPU 기반 엔터프라이즈 AI 에이전트 플랫폼 개발 착수'),
+    '[문단] 퓨리오사AI의 RNGD는 대규모 언어모델과 에이전틱 AI를 위한 데이터센터용 AI 추론 가속기로, 독자적인 TCP 아키텍처를 기반으로 고성능·고효율 AI 추론을 지원한다.
+
+[문제] 위 문단에 가장 어울리는 소제목은 무엇인가요?',
+    'multiple_choice',
+    '["데이터센터용 AI 추론 가속기 ''RNGD''의 주요 특징", "TCP 아키텍처의 한계와 개발 중단 소식", "국내 모바일 반도체 시장의 매출 분석", "글로벌 데이터센터 파산에 따른 NPU 공급 차질"]'::json,
+    '데이터센터용 AI 추론 가속기 ''RNGD''의 주요 특징',
+    '문단은 퓨리오사AI의 RNGD 가속기가 대규모 언어모델/에이전틱 AI를 지원하며 독자적 TCP 아키텍처 기반이라는 특징을 다룹니다.',
+    'RNGD 가속기의 기능과 아키텍처 특징이 담긴 소제목을 고르세요.',
+    'room',
+    'core_understanding',
+    'core_title',
+    1
+),
+-- 17. inference_judgment / inference_blank (short_answer)
+(
+    (SELECT news_id FROM news_articles WHERE title = '애니브릿지, 퓨리오사AI와 함께 NPU 기반 엔터프라이즈 AI 에이전트 플랫폼 개발 착수'),
+    '[문단] 양사는 기술 연동에 그치지 않고 실제 고객 환경에서 성능과 ____ 효율을 검증하고 공동 레퍼런스를 확보하는 데까지 협력을 확대할 계획이다.
+
+[문제] 빈칸에 들어갈 두 글자 단어는 무엇인가요?',
+    'short_answer',
+    '[]'::json,
+    '비용',
+    '기사 7문단에 "성능과 비용 효율을 검증하고"라는 문구가 제시되어 있습니다.',
+    '성능과 함께 기업이 인프라 운용 시 중요하게 고려하는 요소입니다.',
+    'room',
+    'inference_judgment',
+    'inference_blank',
+    1
+),
+-- 18. inference_judgment / inference_implication (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '애니브릿지, 퓨리오사AI와 함께 NPU 기반 엔터프라이즈 AI 에이전트 플랫폼 개발 착수'),
+    '[문단] 생성형 AI의 활용 범위가 단순 질의응답을 넘어 코딩, 지식검색, 업무 자동화 등 에이전트형 서비스로 확대되면서 기업은 모델 성능뿐 아니라 인프라 비용과 안정적인 운영까지 함께 고려해야 하는 국면으로 접어들고 있다.
+
+[문제] 위 문단을 통해 추론할 수 있는 내용으로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["AI 에이전트 서비스가 복잡해질수록 인프라의 효율적인 운영과 비용 절감이 기업 경쟁력의 핵심이 된다.", "질의응답 위주의 단순 AI 서비스는 인프라 비용이 훨씬 많이 소요된다.", "기업들은 코딩이나 지식검색 분야에서 생성형 AI의 활용을 전면 중단할 것이다.", "AI 모델 성능만 뛰어나면 인프라 비용이 아무리 높아도 기업 도입에 아무런 장애가 되지 않는다."]'::json,
+    'AI 에이전트 서비스가 복잡해질수록 인프라의 효율적인 운영과 비용 절감이 기업 경쟁력의 핵심이 된다.',
+    '서비스가 정교해지면서 단순 모델 성능을 넘어 실제 운영 인프라의 가성비와 안정성이 기업의 주된 고민거리가 되었음을 추론할 수 있습니다.',
+    '서비스 고도화에 따른 기업의 인프라 관련 고민 변화를 떠올려 보세요.',
+    'room',
+    'inference_judgment',
+    'inference_implication',
+    1
+),
+-- 19. structure / structure_order (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '애니브릿지, 퓨리오사AI와 함께 NPU 기반 엔터프라이즈 AI 에이전트 플랫폼 개발 착수'),
+    '[문단] (A) 퓨리오사AI는 RNGD 기술 정보와 개발 환경을 제공하고, 애니브릿지는 최적화된 런타임을 개발한다.
+(B) 애니브릿지와 퓨리오사AI가 NPU 기반 AI 에이전트 플랫폼 공동 개발 협약을 체결했다.
+(C) 이를 통해 실제 고객 환경에서 성능과 비용 효율을 검증하고 공동 레퍼런스를 구축할 계획이다.
+
+[문제] 논리적 연결 순서로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["(B) -> (A) -> (C)", "(A) -> (B) -> (C)", "(C) -> (B) -> (A)", "(B) -> (C) -> (A)"]'::json,
+    '(B) -> (A) -> (C)',
+    '협약 체결(B) -> 각사의 역할 분담 및 기술 제공(A) -> 검증 및 레퍼런스 확보라는 목표 달성(C) 순서로 구성하는 것이 자연스럽습니다.',
+    '협력 발표, 역할 분담, 최종 목표로 이어지는 흐름을 파악하세요.',
+    'room',
+    'structure',
+    'structure_order',
+    1
+),
+-- 20. structure / structure_sentence_insertion (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '애니브릿지, 퓨리오사AI와 함께 NPU 기반 엔터프라이즈 AI 에이전트 플랫폼 개발 착수'),
+    '[문단] 퓨리오사AI는 RNGD 활용과 최적화를 위한 기술 정보를 제공한다. [ ㄱ ] 애니브릿지는 이를 기반으로 AI 에이전트에 최적화된 런타임을 고도화한다.
+
+[문제] [ ㄱ ] 위치에 들어갈 문맥상 가장 적절한 접속어는 무엇인가요?',
+    'multiple_choice',
+    '["한편", "하지만", "왜냐하면", "마침내"]'::json,
+    '한편',
+    '퓨리오사AI의 역할 제공에 이어 상응하는 애니브릿지의 역할을 연달아 설명하고 있으므로 대등/연결 접속어 ''한편''이 들어가는 것이 적절합니다.',
+    '한쪽의 역할에 대응하는 상대방의 역할을 이어주는 단어를 찾으세요.',
+    'room',
+    'structure',
+    'structure_sentence_insertion',
+    1
+);
+
+-- 기사(''카카오 노조 "고용·주주가치 설명 없인 못 받아들여"'')는 이미 DB에 있음(V12/V15).
+-- 여기서는 그 기사에 문제 20개만 추가한다. news_id는 제목으로 조회한다.
+
+-- [dailyQuestions 1~10] (game_mode: 'daily_solo')
+INSERT INTO questions (
+    news_id, content, question_format, choices, answer, explanation, hint, game_mode, main_category, sub_category, level
+) VALUES
+-- 1. vocab / vocab_meaning (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '카카오 노조 "고용·주주가치 설명 없인 못 받아들여"'),
+    '기사에 등장한 ''고용승계(雇用承繼)''의 의미로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["회사나 사업이 변경될 때 기존 근로자의 노동계약과 신분을 그대로 이어받는 것", "신규 채용을 통해 새로운 인재를 대규모로 뽑는 것", "근로자의 퇴직금을 조기 정산하여 지급하는 것", "임원을 외부에서 스카우트하여 새로 임명하는 것"]'::json,
+    '회사나 사업이 변경될 때 기존 근로자의 노동계약과 신분을 그대로 이어받는 것',
+    '고용승계는 기업의 분할, 합병, 양도 등이 일어날 때 기존 근로자의 고용 관계 및 노동 조건을 새로운 법인이 이어받아 계속 유지하는 것을 뜻합니다.',
+    '기존에 일하던 근로자의 일자리와 계약을 이어받는 것을 뜻합니다.',
+    'daily_solo',
+    'vocab',
+    'vocab_meaning',
+    1
+),
+-- 2. vocab / vocab_paraphrase (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '카카오 노조 "고용·주주가치 설명 없인 못 받아들여"'),
+    '기사의 "절차에 제동을 걸겠다는 방침이다"에서 ''제동(制動)''과 뜻이 가장 가까운 단어는 무엇인가요?',
+    'multiple_choice',
+    '["저지", "촉진", "승인", "지원"]'::json,
+    '저지',
+    '''제동을 걸다''는 어떤 일의 진행을 막거나 멈추게 한다는 뜻으로 ''저지''와 뜻이 가장 통합니다.',
+    '진행되던 일을 막거나 멈추게 하는 행위를 떠올려 보세요.',
+    'daily_solo',
+    'vocab',
+    'vocab_paraphrase',
+    1
+),
+-- 3. info_extraction / info_consistency (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '카카오 노조 "고용·주주가치 설명 없인 못 받아들여"'),
+    '상법상 발행주식총수의 20% 이상 주주가 반대 의사를 통지하면 주주총회를 거치지 않는 소규모합병 방식으로 진행할 수 없습니다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '6문단에 "상법상 발행주식총수의 20% 이상 주주가 반대 의사를 통지하면 주주총회를 거치지 않는 소규모합병 방식으로 진행할 수 없다"라고 분명히 서술되어 있습니다.',
+    '기사의 소규모합병 제동 관련 문단을 확인해 보세요.',
+    'daily_solo',
+    'info_extraction',
+    'info_consistency',
+    1
+),
+-- 4. info_extraction / info_evidence (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '카카오 노조 "고용·주주가치 설명 없인 못 받아들여"'),
+    '카카오가 인적분할을 통해 나누겠다고 발표한 두 법인의 명칭으로 올바른 조합은 무엇인가요?',
+    'multiple_choice',
+    '["카카오X - 카카오AI", "카카오Pay - 카카오Bank", "카카오Mobility - 카카오Games", "카카오Enterprise - 카카오Brain"]'::json,
+    '카카오X - 카카오AI',
+    '3문단에서 "투자·포트폴리오 관리를 맡는 ''카카오X''와 인공지능(AI) 기술 기반 서비스를 담당하는 ''카카오AI''로 회사를 나누는 인적분할 계획"이라고 언급되어 있습니다.',
+    '카카오가 투자를 담당할 회사와 AI를 담당할 회사로 나눈 명칭을 찾으세요.',
+    'daily_solo',
+    'info_extraction',
+    'info_evidence',
+    1
+),
+-- 5. info_extraction / info_consistency (short_answer)
+(
+    (SELECT news_id FROM news_articles WHERE title = '카카오 노조 "고용·주주가치 설명 없인 못 받아들여"'),
+    '노조가 사측에 제시한 요구사항은 총 몇 가지인가요? (숫자만 작성)',
+    'short_answer',
+    '[]'::json,
+    '5',
+    '8문단에서 "노조는 사측에 △분할 필요성 설명 △고용·노동조건 서면 보장 △인력 배치 기준 공개 △조직개편·매각 시 노조 사전협의 △분할가치 정보 공개 등 5가지를 요구했다"라고 밝혔습니다.',
+    '기사 하단부에서 노조의 요구사항 개수를 확인하세요.',
+    'daily_solo',
+    'info_extraction',
+    'info_consistency',
+    1
+),
+-- 6. core_understanding / core_topic (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '카카오 노조 "고용·주주가치 설명 없인 못 받아들여"'),
+    '이 기사의 핵심 주제로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["카카오 노조의 인적분할 반대 성명 및 고용·주주가치 보장을 위한 소규모합병 저지 행보", "카카오의 신규 AI 서비스 출시 및 해외 시장 진출 전략 발표", "카카오 노사의 임금 인상 합의 체결 및 상생 협약식 개최", "국내 IT 기업들의 자회사 상장 규제 완화 요구 서명 운동"]'::json,
+    '카카오 노조의 인적분할 반대 성명 및 고용·주주가치 보장을 위한 소규모합병 저지 행보',
+    '기사는 카카오 노조가 고용안정과 주주가치 보호 대책이 부족하다는 이유로 인적분할에 반대하며 소규모합병을 저지하려는 상황을 종합적으로 다루고 있습니다.',
+    '카카오 노조가 인적분할에 반대하며 내세운 주장과 대응책이 전체 핵심입니다.',
+    'daily_solo',
+    'core_understanding',
+    'core_topic',
+    1
+),
+-- 7. core_understanding / core_gist (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '카카오 노조 "고용·주주가치 설명 없인 못 받아들여"'),
+    '카카오 노조가 고용승계와 관련하여 사측에 강력히 요구하는 핵심 조건은 무엇인가요?',
+    'multiple_choice',
+    '["단순 구두 선언에 그치지 않고 구체적인 대책을 서면으로 보장하는 것", "전 임직원의 임금을 조건 없이 20% 인상하는 것", "분할 후 모든 직원을 신설 회사로 강제 이직시키는 것", "해외 법인 발령을 완전히 금지하는 조항을 신설하는 것"]'::json,
+    '단순 구두 선언에 그치지 않고 구체적인 대책을 서면으로 보장하는 것',
+    '노조는 원칙적인 선언만으로는 부족하며, 임금·복지·근속 유지 및 배치 기준 등을 명확한 서면으로 보장해야 한다고 주장합니다.',
+    '고용승계 소제목 바로 아래 문단 내용을 참고하세요.',
+    'daily_solo',
+    'core_understanding',
+    'core_gist',
+    1
+),
+-- 8. inference_judgment / inference_implication (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '카카오 노조 "고용·주주가치 설명 없인 못 받아들여"'),
+    '카카오 노조는 회사의 경영권 자체를 완전히 부정하고 반대하기 위해 이번 소규모합병 반대 운동을 전개하는 것이다. (O/X)',
+    'OX',
+    '[]'::json,
+    'X',
+    '마지막 문단에서 서승욱 지회장은 "경영권 자체를 부정하는 것이 아니라 노동자의 권리와 주주 가치가 지켜져야 한다는 취지"라고 분명히 밝혔으므로 X입니다.',
+    '기사의 마지막 문단 지회장의 발언을 확인해 보세요.',
+    'daily_solo',
+    'inference_judgment',
+    'inference_implication',
+    1
+),
+-- 9. inference_judgment / inference_blank (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '카카오 노조 "고용·주주가치 설명 없인 못 받아들여"'),
+    '다음 빈칸에 들어갈 가장 적절한 단어는 무엇인가요?
+"노조는 카카오인베스트먼트 흡수합병 시 주주총회를 거치지 않는 소규모합병을 막기 위해, 발행주식총수의 20% 이상에 해당하는 반대 의사를 확보하여 사측의 (                      ) 방식 절차를 저지하려 한다."',
+    'multiple_choice',
+    '["주주총회 면제", "법원 강제집행", "정부 인가", "노사 공동의결"]'::json,
+    '주주총회 면제',
+    '소규모합병은 원래 주주총회 승인을 거치지 않는 방식인데, 20% 이상 주주가 반대하면 이처럼 주주총회가 면제되는 간이 방식 진행이 불가능해집니다.',
+    '소규모합병이 주주총회를 건너뛰는 절차라는 점을 떠올려 보세요.',
+    'daily_solo',
+    'inference_judgment',
+    'inference_blank',
+    1
+),
+-- 10. structure / structure_order (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '카카오 노조 "고용·주주가치 설명 없인 못 받아들여"'),
+    '기사의 전체 내용 흐름을 순서대로 바르게 요약한 것은 무엇인가요?',
+    'multiple_choice',
+    '["노조의 인적분할 반대 입장 -> 고용 및 주주가치 우려 사항 -> 소규모합병 저지 목표 및 5대 요구사항", "소규모합병 성공 발표 -> 노조의 5대 요구사항 -> 경영권 부정 성명", "인적분할 완료 소식 -> 노조 조합원 탈퇴 운동 -> 일반 주주 대상 이익 배당 요청", "노사 합의 타결 -> 카카오X 설립 승인 -> 소액주주들과의 연대 철회"]'::json,
+    '노조의 인적분할 반대 입장 -> 고용 및 주주가치 우려 사항 -> 소규모합병 저지 목표 및 5대 요구사항',
+    '기사는 노조의 인적분할 반대 선언을 시작으로 고용안정 및 주주가치 우려를 상술한 뒤, 소규모합병 저지 전략과 5대 요구사항으로 마무리됩니다.',
+    '기사의 소제목 흐름과 단락 구조를 확인해 보세요.',
+    'daily_solo',
+    'structure',
+    'structure_order',
+    1
+),
+
+-- [gameQuestions 1~10] (game_mode: 'room')
+-- 11. vocab / vocab_meaning (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '카카오 노조 "고용·주주가치 설명 없인 못 받아들여"'),
+    '[문단] 노조는 특히 고용승계 원칙 선언에 그치지 않고 구체적인 대책이 서면으로 보장돼야 한다고 주장했다.
+
+[문제] 위 문단에서 ''서면(書面)''의 의미로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["글로 작성한 문서나 서류", "말이나 구두로 주고받는 약속", "온라인 영상 통화 내용", "전자 기기에 저장된 음성 파일"]'::json,
+    '글로 작성한 문서나 서류',
+    '서면은 구두(말)가 아닌, 일정한 내용을 글이나 문서로 적어서 남기는 서류를 의미합니다.',
+    '말로만 하는 약속과 달리 문서로 증거를 남기는 형태입니다.',
+    'room',
+    'vocab',
+    'vocab_meaning',
+    1
+),
+-- 12. vocab / vocab_appropriateness (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '카카오 노조 "고용·주주가치 설명 없인 못 받아들여"'),
+    '[문단] 주식을 비례 배정받더라도 향후 추가 상장, 증자, 계열사 간 거래에 따른 가치 하락 위험이 있는 만큼...
+
+[문제] 위 문단의 ''증자(增資)''는 ''기업이 자본금을 늘리기 위해 주식을 새로 발행하는 것''이라는 의미로 적절하게 쓰였습니다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '''증자''는 한자 뜻 그대로 자본금을 늘리는 일이며, 신주 발행을 통해 주식 수가 늘어 기존 주주의 가치 희석이 일어날 수 있는 행위입니다.',
+    '자본금을 더 늘리기 위해 주식을 발행하는 경제 용어입니다.',
+    'room',
+    'vocab',
+    'vocab_appropriateness',
+    1
+),
+-- 13. info_extraction / info_consistency (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '카카오 노조 "고용·주주가치 설명 없인 못 받아들여"'),
+    '[문단] 반대 의사표시 대상은 지난 7일 기준 주주명부에 등재된 주주로, 실질주주는 거래 증권사를 통해 의사를 제출할 수 있습니다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '7문단 첫 문장에 "반대 의사표시 대상은 지난 7일 기준 주주명부에 등재된 주주로, 실질주주는 거래 증권사를 통해 의사를 제출할 수 있다"라고 적혀 있으므로 O입니다.',
+    '7문단의 반대 의사표시 대상 및 제출 방법을 확인해 보세요.',
+    'room',
+    'info_extraction',
+    'info_consistency',
+    1
+),
+-- 14. info_extraction / info_evidence (short_answer)
+(
+    (SELECT news_id FROM news_articles WHERE title = '카카오 노조 "고용·주주가치 설명 없인 못 받아들여"'),
+    '[문단] 노조는 우선 내년 1월 1일 합병기일을 목표로 진행 중인 카카오인베스트먼트 흡수합병 절차에 제동을 걸겠다는 방침이다.
+
+[문제] 카카오가 카카오인베스트먼트와의 흡수합병을 목표로 설정한 합병기일은 내년 몇 월 몇 일인가요? (예: 3월 15일)',
+    'short_answer',
+    '[]'::json,
+    '1월 1일',
+    '문단에서 "내년 1월 1일 합병기일을 목표로 진행 중인"이라고 명시되어 있습니다.',
+    '합병기일로 언급된 월과 일을 찾아 쓰세요.',
+    'room',
+    'info_extraction',
+    'info_evidence',
+    1
+),
+-- 15. core_understanding / core_topic (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '카카오 노조 "고용·주주가치 설명 없인 못 받아들여"'),
+    '[문단] 주식을 비례 배정받더라도 향후 추가 상장, 증자, 계열사 간 거래에 따른 가치 하락 위험이 있는 만큼, 분할가치 산정 근거와 후속 사업재편 방향을 일반 주주에게 투명하게 공개해야 한다는 입장이다.
+
+[문제] 위 문단에서 노조가 지적하는 주주 측면의 핵심 문제는 무엇인가요?',
+    'multiple_choice',
+    '["인적분할 및 후속 재편 과정에서 발생할 수 있는 주주가치 훼손 위험", "주주들에 대한 분기 배당금 지급 지연 우려", "외국인 주주들의 주식 매도로 인한 환율 변동성", "소액주주들의 의결권 행사 완전 박탈"]'::json,
+    '인적분할 및 후속 재편 과정에서 발생할 수 있는 주주가치 훼손 위험',
+    '문단은 추가 상장이나 증자 등으로 기존 주주의 주식 가치가 하락할 위험이 있으므로 투명한 정보 공개가 필요하다는 점을 강조합니다.',
+    '주식 가치 하락 및 투명성 부족 문제를 파악해 보세요.',
+    'room',
+    'core_understanding',
+    'core_topic',
+    1
+),
+-- 16. core_understanding / core_title (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '카카오 노조 "고용·주주가치 설명 없인 못 받아들여"'),
+    '[문단] 노조는 우선 내년 1월 1일 합병기일을 목표로 진행 중인 카카오인베스트먼트 흡수합병 절차에 제동을 걸겠다는 방침이다. 상법상 발행주식총수의 20% 이상 주주가 반대 의사를 통지하면 주주총회를 거치지 않는 소규모합병 방식으로 진행할 수 없다.
+
+[문제] 위 문단에 가장 어울리는 소제목은 무엇인가요?',
+    'multiple_choice',
+    '["20% 반대표 확보로 소규모합병 저지 추진", "카카오인베스트먼트의 주식 전량 매각 결정", "주주총회 무산에 따른 전격적 합병 승인", "노사 공동 합병 추진위원회 공식 발족"]'::json,
+    '20% 반대표 확보로 소규모합병 저지 추진',
+    '문단은 20% 이상의 반대 표를 확보하여 주주총회 없이 진행되는 소규모합병을 막겠다는 노조의 구체적 대응 방안을 다루고 있습니다.',
+    '소규모합병을 막기 위한 20% 반대 조건에 초점을 맞춰 제목을 찾으세요.',
+    'room',
+    'core_understanding',
+    'core_title',
+    1
+),
+-- 17. inference_judgment / inference_blank (short_answer)
+(
+    (SELECT news_id FROM news_articles WHERE title = '카카오 노조 "고용·주주가치 설명 없인 못 받아들여"'),
+    '[문단] 서승욱 카카오지회장은 "경영권 자체를 부정하는 것이 아니라 노동자의 권리와 ____가 지켜져야 한다는 취지"라고 밝혔다.
+
+[문제] 맥락상 빈칸에 들어갈 네 글자 용어는 무엇인가요?',
+    'short_answer',
+    '[]'::json,
+    '주주가치',
+    '기사 마지막 문단에서 "노동자의 권리와 주주 가치가 지켜져야 한다는 취지"라고 서승욱 지회장이 언급했습니다.',
+    '노동자의 권리와 함께 지켜져야 할 주주의 권익을 뜻하는 말입니다.',
+    'room',
+    'inference_judgment',
+    'inference_blank',
+    1
+),
+-- 18. inference_judgment / inference_implication (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '카카오 노조 "고용·주주가치 설명 없인 못 받아들여"'),
+    '[문단] 노조는 조합원과 소액주주들에게 반대 의사표시 동참을 요청하고, 사측 대응에 따라 소액주주들과의 연대 및 공동 대응도 검토하기로 했다.
+
+[문제] 위 문단을 통해 알 수 있는 카카오 노조의 전략으로 올바른 것은 무엇인가요?',
+    'multiple_choice',
+    '["소액주주들과의 연대를 확대하여 20% 반대 지분을 효율적으로 확보하려 한다.", "조합원만의 힘으로 충분하므로 외부 주주들과의 소통을 차단하려 한다.", "사측의 제안을 조건 없이 수용하여 소액주주들의 요구를 무시하려 한다.", "법적 대응을 완전히 포기하고 사측의 자발적 철회만을 기다리려 한다."]'::json,
+    '소액주주들과의 연대를 확대하여 20% 반대 지분을 효율적으로 확보하려 한다.',
+    '노조 지부 지분만으로는 20% 목표 달성이 어려울 수 있으므로, 소액주주들과 연대하여 함께 반대 의사를 모으는 전략을 취하고 있습니다.',
+    '노조가 소액주주들에게 동참을 요청하는 이유를 생각해 보세요.',
+    'room',
+    'inference_judgment',
+    'inference_implication',
+    1
+),
+-- 19. structure / structure_order (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '카카오 노조 "고용·주주가치 설명 없인 못 받아들여"'),
+    '[문단] (A) 카카오 노조가 사측의 인적분할 계획에 반대 입장을 발표했다.
+(B) 고용 불안과 주주가치 훼손 위험을 지적하며 5가지 요구사항을 제시했다.
+(C) 인적분할의 첫 단계인 소규모합병을 막기 위해 20% 반대 의사 확보에 나섰다.
+
+[문제] 논리적 흐름에 맞춘 가장 적절한 순서는 무엇인가요?',
+    'multiple_choice',
+    '["(A) -> (B) -> (C)", "(B) -> (A) -> (C)", "(C) -> (B) -> (A)", "(A) -> (C) -> (B)"]'::json,
+    '(A) -> (B) -> (C)',
+    '인적분할 반대 입장 표명(A) -> 세부 지적 이유 및 5대 요구사항 제시(B) -> 소규모합병 저지를 위한 반대 표 확보 실동(C) 순서로 논리가 전개됩니다.',
+    '문제 제기에서 세부 이유 설명, 그리고 실제 실동 수단으로 이어지는 흐름입니다.',
+    'room',
+    'structure',
+    'structure_order',
+    1
+),
+-- 20. structure / structure_sentence_insertion (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '카카오 노조 "고용·주주가치 설명 없인 못 받아들여"'),
+    '[문단] 카카오는 회사를 나누는 인적분할 계획을 발표했다. [ ㄱ ] 노조는 현시점 분할의 필요성과 위험 부담 주체 등에 대한 설명이 부족하다며 반대 성명을 냈다.
+
+[문제] [ ㄱ ] 위치에 들어갈 가장 적절한 접속어는 무엇인가요?',
+    'multiple_choice',
+    '["그러나", "따라서", "왜냐하면", "예를 들어"]'::json,
+    '그러나',
+    '사측의 인적분할 발표와 이에 상충되는 노조의 반대 입장을 연결하므로 역접의 접속어 ''그러나''가 적절합니다.',
+    '사측의 계획 발표와 노조의 반대 반응 사이를 잇는 말을 찾으세요.',
+    'room',
+    'structure',
+    'structure_sentence_insertion',
+    1
+);
+
+-- 기사(''오라클, AI 클라우드 3자릿수 성장…대규모 투자 우려에도 장외 주가 반등'')는 이미 DB에 있음(V12/V15, 저장된 level은 1).
+-- 문제 난이도는 사용자 확인에 따라 4로 넣는다. daily 3번(OX)은 원본에 content가 누락돼 있어
+-- explanation 근거(IaaS 매출 121%/74억 달러)에 맞춰 오답 문장으로 새로 작성했다.
+
+-- [dailyQuestions 1~10] (game_mode: 'daily_solo')
+INSERT INTO questions (
+    news_id, content, question_format, choices, answer, explanation, hint, game_mode, main_category, sub_category, level
+) VALUES
+-- 1. vocab / vocab_meaning (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '오라클, AI 클라우드 3자릿수 성장…대규모 투자 우려에도 장외 주가 반등'),
+    '다음 문장에 나오는 ''인프라''의 의미로 가장 적절한 것은 무엇인가요?
+
+"오라클은 AI 학습·추론 수요를 선점하기 위해 데이터센터와 그래픽처리장치(GPU) 등 인프라 투자를 확대하고 있다."',
+    'multiple_choice',
+    '["어떤 활동이나 사업의 기반이 되는 생산 시설이나 제도", "소프트웨어를 개발할 때 사용하는 프로그래밍 언어", "인공지능 모델이 스스로 학습할 때 사용하는 데이터셋", "기업이 제품을 판매할 때 사용하는 마케팅 전략"]'::json,
+    '어떤 활동이나 사업의 기반이 되는 생산 시설이나 제도',
+    '인프라(인프라스트럭처)는 데이터센터나 네트워크처럼 특정 서비스나 산업을 운영하는 데 필요한 기초 시설과 시스템을 뜻합니다.',
+    '데이터센터나 서버처럼 AI 서비스를 운영하기 위해 필요한 기본 바탕을 떠올려 보세요.',
+    'daily_solo',
+    'vocab',
+    'vocab_meaning',
+    4
+),
+-- 2. vocab / vocab_appropriateness (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '오라클, AI 클라우드 3자릿수 성장…대규모 투자 우려에도 장외 주가 반등'),
+    '다음 문장의 ''견인''과 뜻이 통하여 바꾸어 쓰기에 가장 적절한 단어는 무엇인가요?
+
+"이번 실적의 성장축을 견인한 것은 클라우드 인프라 사업이었다."',
+    'multiple_choice',
+    '["방해", "주도", "감소", "포기"]'::json,
+    '주도',
+    '''견인''은 끌어당겨 이끈다는 뜻이므로, 성장을 이끌어 나갔다는 의미의 ''주도''로 바꾸어 쓰는 것이 가장 적절합니다.',
+    '''견인차 역할''이라는 말처럼 성장을 앞장서서 끌고 갔다는 뜻의 단어를 찾아보세요.',
+    'daily_solo',
+    'vocab',
+    'vocab_appropriateness',
+    4
+),
+-- 3. info_extraction / info_consistency (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '오라클, AI 클라우드 3자릿수 성장…대규모 투자 우려에도 장외 주가 반등'),
+    '오라클의 서비스형 인프라(IaaS) 매출은 전년 동기 대비 62% 증가한 116억 달러를 기록했습니다. (O/X)',
+    'OX',
+    '[]'::json,
+    'X',
+    '기사에 따르면 오라클의 2027회계연도 1분기 IaaS 매출은 전년 동기 대비 121% 증가한 74억 달러를 기록했습니다. 62% 증가한 116억 달러는 SaaS를 포함한 전체 클라우드 매출입니다.',
+    '기사 중반부의 OCI 및 IaaS 매출 증가율 수치를 확인해 보세요.',
+    'daily_solo',
+    'info_extraction',
+    'info_consistency',
+    4
+),
+-- 4. info_extraction / info_evidence (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '오라클, AI 클라우드 3자릿수 성장…대규모 투자 우려에도 장외 주가 반등'),
+    '오라클의 잉여현금흐름(FCF)이 53억 9600만 달러 적자를 기록한 직접적인 원인으로 지목된 항목은 무엇인가요?',
+    'multiple_choice',
+    '["소프트웨어 지원 매출의 급격한 상승", "데이터센터 및 서버, GPU 확충을 위한 대규모 자본지출", "환율 변동으로 인한 해외 사업 손실", "넷스위트 서비스의 마케팅 비용 과다 집행"]'::json,
+    '데이터센터 및 서버, GPU 확충을 위한 대규모 자본지출',
+    '기사에서는 데이터센터, 서버, GPU 등 AI 클라우드 인프라 확충을 위한 자본지출이 285억 달러로 늘면서 잉여현금흐름이 적자를 기록했다고 설명합니다.',
+    '자본지출 항목과 잉여현금흐름 적자 원인이 언급된 문단을 찾아보세요.',
+    'daily_solo',
+    'info_extraction',
+    'info_evidence',
+    4
+),
+-- 5. core_understanding / core_title (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '오라클, AI 클라우드 3자릿수 성장…대규모 투자 우려에도 장외 주가 반등'),
+    '이 기사의 내용을 종합하여 가장 어울리는 제목을 고르시오.',
+    'multiple_choice',
+    '["오라클, SW 매출 급감으로 클라우드 사업 전면 철수 선언", "AI 클라우드 고성장에 장외 주가 상승…대규모 인프라 투자 지속", "온프레미스 시장의 완전한 부활과 빅테크 기업들의 투자 축소", "글로벌 GPU 가격 하락으로 인한 AI 데이터센터 건설 중단"]'::json,
+    'AI 클라우드 고성장에 장외 주가 상승…대규모 인프라 투자 지속',
+    '기사는 오라클이 AI 클라우드 인프라의 세 자릿수 성장에 힘입어 장외 주가가 반등했으나, 대규모 자본지출에 대한 시장의 관심도 함께 존재한다는 내용을 다루고 있습니다.',
+    'AI 클라우드의 높은 성장세와 이에 따른 투자/주가 반응을 종합한 제목을 골라보세요.',
+    'daily_solo',
+    'core_understanding',
+    'core_title',
+    4
+),
+-- 6. core_understanding / core_gist (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '오라클, AI 클라우드 3자릿수 성장…대규모 투자 우려에도 장외 주가 반등'),
+    '이 기사가 전달하려는 핵심 내용으로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["오라클은 대규모 자본지출 부담에도 불구하고 AI 클라우드 인프라의 높은 성장에 힘입어 시장의 기대를 받고 있다.", "오라클은 소프트웨어 라이선스 매출 감소를 극복하지 못하고 심각한 영업이익 감소를 겪고 있다.", "월가의 모든 애널리스트는 오라클의 잉여현금흐름 적자에 대해 매수 의견을 철회하고 매도를 권고했다.", "AI 클라우드 시장의 수요가 공급보다 적어져 오라클의 GPU 가동률이 급격히 낮아졌다."]'::json,
+    '오라클은 대규모 자본지출 부담에도 불구하고 AI 클라우드 인프라의 높은 성장에 힘입어 시장의 기대를 받고 있다.',
+    '기사는 대규모 투자로 인한 현금흐름 부담 우려에도 불구하고, AI 클라우드 수요 폭증과 매출 고성장이 오라클의 핵심 성장동력이 되고 있음을 보여줍니다.',
+    '대규모 투자 우려와 클라우드 매출 고성장이라는 두 축을 바탕으로 전체 글의 요지를 파악해 보세요.',
+    'daily_solo',
+    'core_understanding',
+    'core_gist',
+    4
+),
+-- 7. inference_judgment / inference_implication (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '오라클, AI 클라우드 3자릿수 성장…대규모 투자 우려에도 장외 주가 반등'),
+    '오라클의 기존 소프트웨어(SW) 매출이 감소한 것에 대해 회사가 밝힌 배경으로 추론할 수 있는 것은 무엇인가요?',
+    'multiple_choice',
+    '["고객들이 기존 온프레미스 환경에서 클라우드 환경으로 전환하고 있기 때문이다.", "오라클 소프트웨어의 품질이 크게 떨어져 고객들이 이용을 중단했기 때문이다.", "정부의 규제로 인해 소프트웨어 라이선스 판매가 금지되었기 때문이다.", "GPU 공급 부족으로 인해 소프트웨어 개발이 중단되었기 때문이다."]'::json,
+    '고객들이 기존 온프레미스 환경에서 클라우드 환경으로 전환하고 있기 때문이다.',
+    '오라클 측은 고객들이 전통적인 온프레미스 환경에서 클라우드로 이전함에 따라 소프트웨어 매출 감소가 나타났다고 설명했습니다.',
+    '''클라우드 전환 영향에 SW 매출 감소'' 소제목 및 해당 문단을 확인해 보세요.',
+    'daily_solo',
+    'inference_judgment',
+    'inference_implication',
+    4
+),
+-- 8. inference_judgment / inference_continuation (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '오라클, AI 클라우드 3자릿수 성장…대규모 투자 우려에도 장외 주가 반등'),
+    '월가 애널리스트들의 의견을 바탕으로 할 때, 향후 오라클 주가 흐름의 핵심 변수로 이어질 내용은 무엇인가요?',
+    'multiple_choice',
+    '["대규모 투자비가 얼마나 빠르게 매출 및 현금흐름 개선으로 이어지는지 여부", "스페이스X의 우주선 발사 성공 여부와 위성 통신 속도", "소프트웨어 지원 매출을 기존 온프레미스로 재분류하는 작업", "넷스위트 서비스의 명칭 변경 및 신규 로고 발표"]'::json,
+    '대규모 투자비가 얼마나 빠르게 매출 및 현금흐름 개선으로 이어지는지 여부',
+    '기사는 막대한 데이터센터 투자비가 향후 수익성과 현금흐름 개선으로 얼마나 빠르게 전환되는지, 그리고 RPO의 실제 매출 전환 속도가 향후 핵심 변수라고 언급합니다.',
+    '기사 마지막 부분에서 월가의 신중론과 향후 과제로 언급된 부분을 확인하세요.',
+    'daily_solo',
+    'inference_judgment',
+    'inference_continuation',
+    4
+),
+-- 9. structure / structure_order (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '오라클, AI 클라우드 3자릿수 성장…대규모 투자 우려에도 장외 주가 반등'),
+    '다음 기사의 주요 내용을 논리적 흐름에 맞게 나열한 것을 고르시오.
+
+(가) OCI를 중심으로 한 1분기 클라우드 실적 발표 및 AI 인프라 확충 수치 공개
+(나) 실적 발표 전 자본지출 부담에 따른 약세와 AI 클라우드 호조로 인한 시간외 주가 반등
+(다) 투자 부담에 대한 월가의 상반된 평가와 현금흐름 개선에 대한 전망',
+    'multiple_choice',
+    '["(나) - (가) - (다)", "(가) - (나) - (다)", "(다) - (가) - (나)", "(나) - (다) - (가)"]'::json,
+    '(나) - (가) - (다)',
+    '기사는 전체 요약 및 주가 반응(나)을 먼저 제시한 뒤, 구체적인 1분기 클라우드 실적 수치(가)를 보여주고, 마지막으로 월가의 찬반 평가 및 향후 전망(다)으로 구성되어 있습니다.',
+    '기사의 도입부, 중반부 실적 수치, 후반부 월가 평가의 순서를 살펴보세요.',
+    'daily_solo',
+    'structure',
+    'structure_order',
+    4
+),
+-- 10. structure / structure_irrelevant_sentence (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '오라클, AI 클라우드 3자릿수 성장…대규모 투자 우려에도 장외 주가 반등'),
+    '다음 글의 전체 흐름과 관계없는 문장을 고르시오.
+
+"오라클은 AI 학습·추론 수요를 선점하기 위해 데이터센터와 그래픽처리장치(GPU) 등 인프라 투자를 확대하고 있다. (ㄱ) 데이터센터 건설이 본격화하면 고대역폭메모리(HBM)와 고성능 서버 등 공급망 전반의 수요가 늘어날 수 있다. (ㄴ) 최근 국내 이동통신사들은 알뜰폰 요금제 개편을 단행했다. (ㄷ) 오라클은 이번 분기에 데이터센터 용량 850메가와트(MW)를 추가 공급하며 인프라 확충에 집중했다."',
+    'multiple_choice',
+    '["(ㄱ)", "(ㄴ)", "(ㄷ)", "없음"]'::json,
+    '(ㄴ)',
+    '(ㄴ)은 알뜰폰 요금제 개편에 대한 내용으로, 오라클의 AI 데이터센터 인프라 투자를 설명하는 글 전체 문맥과 전혀 관계가 없습니다.',
+    '오라클의 AI 데이터센터 인프라 투자와 관련이 없는 문장을 찾아보세요.',
+    'daily_solo',
+    'structure',
+    'structure_irrelevant_sentence',
+    4
+),
+
+-- [gameQuestions 1~10] (game_mode: 'room')
+-- 11. vocab / vocab_meaning (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '오라클, AI 클라우드 3자릿수 성장…대규모 투자 우려에도 장외 주가 반등'),
+    '[문단] 오라클은 AI 학습·추론 수요를 선점하기 위해 데이터센터와 그래픽처리장치(GPU) 등 인프라 투자를 확대하고 있다.
+
+[문제] 위 문단에서 ''남보다 앞서서 얻거나 차지함''을 뜻하는 단어는 무엇인가요?',
+    'multiple_choice',
+    '["선점", "확대", "수요", "추론"]'::json,
+    '선점',
+    '''선점''은 남보다 먼저 차지한다는 뜻입니다.',
+    '인프라 투자를 확대하여 수요를 남들보다 먼저 잡으려는 행동을 나타내는 단어를 찾아보세요.',
+    'room',
+    'vocab',
+    'vocab_meaning',
+    4
+),
+-- 12. vocab / vocab_paraphrase (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '오라클, AI 클라우드 3자릿수 성장…대규모 투자 우려에도 장외 주가 반등'),
+    '[문단] 오라클은 10일(현지시간) 2027회계연도 1분기 매출이 전년 동기 대비 30% 증가한 193억 5000만 달러를 기록했다고 밝혔다.
+
+[문제] 위 문단의 ''전년 동기 대비''를 쉬운 표현으로 바꾼 것으로 가장 적절한 것은 무엇인가요?',
+    'multiple_choice',
+    '["작년 같은 기간과 비교하여", "지난달과 비교하여", "내년 동일한 계절과 비교하여", "지난주 같은 요일에 비해"]'::json,
+    '작년 같은 기간과 비교하여',
+    '''전년 동기 대비''는 작년의 같은 기간과 비교했을 때라는 뜻입니다.',
+    '''전년(작년)''과 ''동기(같은 기간)''라는 한자어의 의미를 생각해 보세요.',
+    'room',
+    'vocab',
+    'vocab_paraphrase',
+    4
+),
+-- 13. info_extraction / info_consistency (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '오라클, AI 클라우드 3자릿수 성장…대규모 투자 우려에도 장외 주가 반등'),
+    '[문단] 일반회계기준(GAAP) 영업이익은 67억 달러로 57% 늘었고, 일회성 항목 등을 제외한 비일반회계기준(Non-GAAP) 영업이익은 82억 달러로 31% 증가했다.
+
+[문제] 오라클의 1분기 비일반회계기준(Non-GAAP) 영업이익은 67억 달러이다. (O/X)',
+    'OX',
+    '[]'::json,
+    'X',
+    '문단에 따르면 비일반회계기준(Non-GAAP) 영업이익은 82억 달러이며, 67억 달러는 일반회계기준(GAAP) 영업이익입니다.',
+    '문단에서 비일반회계기준 영업이익 옆에 적힌 금액을 정확히 확인하세요.',
+    'room',
+    'info_extraction',
+    'info_consistency',
+    4
+),
+-- 14. info_extraction / info_evidence (short_answer)
+(
+    (SELECT news_id FROM news_articles WHERE title = '오라클, AI 클라우드 3자릿수 성장…대규모 투자 우려에도 장외 주가 반등'),
+    '[문단] 오라클은 이번 분기에 데이터센터 용량 850메가와트(MW)를 추가 공급하고, AI 클라우드 고객에게 GPU 30만 개 이상을 인도했다고 밝혔다.
+
+[문제] 오라클이 이번 분기에 AI 클라우드 고객에게 인도한 GPU의 수량은 몇 개 이상인가요? (숫자와 단위 포함)',
+    'short_answer',
+    '[]'::json,
+    '30만개',
+    '문단에서 AI 클라우드 고객에게 GPU 30만 개 이상을 인도했다고 명시되어 있습니다.',
+    '문단 후반부의 GPU 인도 수량을 확인하세요.',
+    'room',
+    'info_extraction',
+    'info_evidence',
+    4
+),
+-- 15. core_understanding / core_topic (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '오라클, AI 클라우드 3자릿수 성장…대규모 투자 우려에도 장외 주가 반등'),
+    '[문단] 이번 실적의 중심은 오라클 클라우드 인프라스트럭처(OCI) 사업이었다. OCI를 포함한 서비스형 인프라(IaaS) 매출은 74억 달러로 121% 늘었고 서비스형 소프트웨어(SaaS)를 포함한 전체 클라우드 매출은 116억 달러로 62% 증가했다.
+
+[문제] 위 문단이 주로 다루고 있는 중심 소재는 무엇인가요?',
+    'multiple_choice',
+    '["오라클의 클라우드 사업 실적 성장", "스마트폰 애플리케이션 다운로드 수", "전통적인 PC 소프트웨어의 판매 중단", "해외 공장 건설을 위한 부지 확보"]'::json,
+    '오라클의 클라우드 사업 실적 성장',
+    '문단은 OCI 및 IaaS, SaaS 등 오라클의 클라우드 사업 매출 성장에 대해 설명하고 있습니다.',
+    'OCI, IaaS, 클라우드 매출 등 문단에서 반복되는 주요 핵심어를 살펴보세요.',
+    'room',
+    'core_understanding',
+    'core_topic',
+    4
+),
+-- 16. core_understanding / core_argument (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '오라클, AI 클라우드 3자릿수 성장…대규모 투자 우려에도 장외 주가 반등'),
+    '[문단] 폴 믹스 프리덤캐피털마켓츠 애널리스트는 "오라클이 AI 확장 전략을 뒷받침하기 위해 잉여현금흐름 적자를 여러 분기째 이어가고 있어 우려된다"고 지적했다.
+
+[문제] 폴 믹스 애널리스트의 주장으로 알맞은 것은 무엇인가요?',
+    'multiple_choice',
+    '["오라클의 지속적인 잉여현금흐름 적자에 대해 우려하고 있다.", "오라클의 AI 확장 전략이 너무 느려서 문제라고 생각한다.", "오라클이 데이터센터를 즉시 매각해야 한다고 주장한다.", "오라클의 주가가 너무 낮아 무조건 매수해야 한다고 본다."]'::json,
+    '오라클의 지속적인 잉여현금흐름 적자에 대해 우려하고 있다.',
+    '폴 믹스는 오라클이 AI 확장을 위해 잉여현금흐름 적자를 이어가는 것에 대해 우려를 표했습니다.',
+    '애널리스트가 지적한 ''잉여현금흐름 적자''라는 키워드에 집중해 보세요.',
+    'room',
+    'core_understanding',
+    'core_argument',
+    4
+),
+-- 17. inference_judgment / inference_blank (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '오라클, AI 클라우드 3자릿수 성장…대규모 투자 우려에도 장외 주가 반등'),
+    '[문단] 오라클은 "AI 클라우드 학습 및 추론 서비스에 대한 고객 수요가 계속해서 공급보다 빠르게 증가하고 있다"며 "이번 분기 300억 달러 이상의 AI 클라우드 계약을 새로 체결해 ____이 6640억 달러로 늘었다"고 실적발표에서 설명했다.
+
+[문제] 문단의 빈칸에 들어갈 알맞은 용어는 무엇인가요?',
+    'multiple_choice',
+    '["잔여계약의무(RPO)", "단기 차입금", "주식 배당금", "연구 개발비"]'::json,
+    '잔여계약의무(RPO)',
+    '신규 계약 체결을 통해 6,640억 달러로 늘어났다고 설명한 항목은 잔여계약의무(RPO)입니다.',
+    '새로 체결한 클라우드 계약의 결과로 누적된 수주 잔고를 뜻하는 용어를 찾아보세요.',
+    'room',
+    'inference_judgment',
+    'inference_blank',
+    4
+),
+-- 18. inference_judgment / inference_implication (OX)
+(
+    (SELECT news_id FROM news_articles WHERE title = '오라클, AI 클라우드 3자릿수 성장…대규모 투자 우려에도 장외 주가 반등'),
+    '[문단] 1분기 GPU 가동률은 97.9%로 매우 높은 수준을 유지했고, GPU의 수명과 가치도 계속 우리를 놀라게 하고 있다.
+
+[문제] GPU 가동률이 97.9%라는 것은 오라클의 GPU 보유 자원이 쉬지 않고 거의 전부 사용되고 있음을 의미한다. (O/X)',
+    'OX',
+    '[]'::json,
+    'O',
+    '가동률이 97.9%에 달한다는 것은 대부분의 GPU 장비가 고객의 AI 작업 처리에 쉴 새 없이 활용되고 있음을 뜻합니다.',
+    '97.9%라는 높은 가동률 수치가 가진 의미를 생각해 보세요.',
+    'room',
+    'inference_judgment',
+    'inference_implication',
+    4
+),
+-- 19. structure / structure_sentence_insertion (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '오라클, AI 클라우드 3자릿수 성장…대규모 투자 우려에도 장외 주가 반등'),
+    '[문단] 10일 정규장에서 152.94달러에 마감한 오라클 주가는 실적 발표 뒤 시간외 거래에서 한때 6.9% 상승한 163.50달러까지 올랐다. [ 1 ] 이후 159.26달러 선에서 거래됐다. [ 2 ] 다만 시간외 주가는 시시각각 변동하는 만큼 기준 시각을 함께 명시할 필요가 있다. [ 3 ]
+
+[문제] "주가는 발표 직후 큰 폭으로 솟구쳤다."라는 문장이 들어가기에 가장 자연스러운 위치는 어디인가요?',
+    'multiple_choice',
+    '["[ 1 ]", "[ 2 ]", "[ 3 ]", "들어갈 수 없음"]'::json,
+    '[ 1 ]',
+    '주가가 시간외 거래에서 6.9% 상승했다는 언급 바로 뒤인 [ 1 ]에 위치하는 것이 문맥상 가장 자연스럽습니다.',
+    '주가가 163.50달러까지 오른 직후에 들어갈 문장을 선택하세요.',
+    'room',
+    'structure',
+    'structure_sentence_insertion',
+    4
+),
+-- 20. structure / structure_irrelevant_sentence (multiple_choice)
+(
+    (SELECT news_id FROM news_articles WHERE title = '오라클, AI 클라우드 3자릿수 성장…대규모 투자 우려에도 장외 주가 반등'),
+    '[문단] SW 매출은 55억 5000만 달러로 전년 동기 대비 3% 감소했다. (ㄱ) SW 라이선스 매출은 6억 5500만 달러로 14% 줄었다. (ㄴ) 오라클은 최근 사옥 주변에 대형 공원을 조성하기로 결정했다. (ㄷ) 소프트웨어 지원 매출도 48억 9500만 달러로 1% 감소했다.
+
+[문제] 위 문단에서 흐름상 관계없는 문장은 무엇인가요?',
+    'multiple_choice',
+    '["(ㄱ)", "(ㄴ)", "(ㄷ)", "없음"]'::json,
+    '(ㄴ)',
+    '(ㄴ)은 오라클 사옥 근처의 공원 조성에 관한 글로, SW 매출 세부 항목 감소를 다루는 문단의 내용과 관련이 없습니다.',
+    '소프트웨어 매출 감소 수치를 설명하는 내용 사이에 들어간 어색한 문장을 찾으세요.',
+    'room',
+    'structure',
+    'structure_irrelevant_sentence',
+    4
+);
