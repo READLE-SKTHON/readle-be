@@ -274,7 +274,7 @@ class RoomServiceConcurrencyTest {
                     .answer("O")
                     .explanation("설명")
                     .hint("힌트")
-                    .gameMode(GameMode.category_practice)
+                    .gameMode(GameMode.room)
                     .mainCategory(MainCategory.vocab)
                     .subCategory(SubCategory.vocab_meaning)
                     .level(1)

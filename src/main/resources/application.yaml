@@ -24,7 +24,7 @@ spring:
     locations: classpath:db/migration
 
 cors:
-  allowed-origins: http://localhost:3000,http://localhost:5173/,https://readle-fe.vercel.app/
+  allowed-origins: http://localhost:3000,http://localhost:5173/,https://readle-fe.vercel.app/,https://api.likelion.store/swagger-ui/index.html
 
 gemini:
   api-key: ${GEMINI_KEY}

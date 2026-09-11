@@ -18,7 +18,7 @@ public class AllRankingResponse {
     @Schema(description = "상위 7명 랭킹")
     private List<RankingItem> rankings;
 
-    @Schema(description = "내 순위 (7등 안팎 상관없이 항상 포함)")
+    @Schema(description = "내 순위 (7등 밖일 때만 포함, 7등 이내면 null)")
     private RankingItem myRank;
 
     @Getter

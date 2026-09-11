@@ -63,11 +63,7 @@ public class RoomService {
     // TODO: 실제 초대 링크 생성 로직 없음. 프론트 라우트 정해지면 교체.
     private static final String DUMMY_INVITE_LINK = "https://dummy-invite-link.com";
 
-    /**
-     * TODO: 스키마상 방 게임용 문제는 game_mode_type='room' 이 의도이지만,
-     * QuestionGenerationService 가 "게임용 문제"를 category_practice 로 저장하고 있어
-     * 실제 데이터와 맞추기 위해 우선 이 값으로 조회한다. 생성 쪽이 정리되면 함께 바꿀 것.
-     */
+    /** 방 게임용 문제를 조회할 때 사용하는 game_mode. */
     private static final GameMode ROOM_GAME_MODE = GameMode.room;
 
     /** 정답 공개 페이즈 고정 길이(초). */
