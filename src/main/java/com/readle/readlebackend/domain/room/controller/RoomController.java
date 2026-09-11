@@ -30,13 +30,13 @@ public class RoomController {
         return ResponseEntity.ok(BaseResponse.success("방이 생성되었습니다.", response));
     }
 
-    @PostMapping("/{roomId}/join")
-    @Operation(summary = "방 참가(코드용)", description = "방 코드로 게임 방에 참가합니다.")
-    public ResponseEntity<BaseResponse<Void>> joinRoom(
+    @PostMapping("/join/{roomCode}")
+    @Operation(summary = "방 참가", description = "방 코드(4자리)로 게임 방에 참가합니다.")
+    public ResponseEntity<BaseResponse<CreateRoomResponse>> joinRoom(
             @CurrentUser Long userId,
-            @PathVariable Long roomId
+            @PathVariable Long roomCode
     ) {
-        roomService.joinRoom(userId, roomId);
-        return ResponseEntity.ok(BaseResponse.success("방에 참가했습니다.", null));
+        CreateRoomResponse response = roomService.joinRoom(userId, roomCode);
+        return ResponseEntity.ok(BaseResponse.success("방에 참가했습니다.", response));
     }
 }

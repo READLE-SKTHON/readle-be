@@ -54,26 +54,28 @@ public class RoomService {
     }
 
     @Transactional
-    public void joinRoom(Long userId, Long roomId) {
-        GameRoom room = gameRoomRepository.findById(roomId)
+    public CreateRoomResponse joinRoom(Long userId, Long roomCode) {
+        GameRoom room = gameRoomRepository.findByRoomCode(roomCode)
                 .orElseThrow(() -> new CustomException(RoomErrorCode.ROOM_NOT_FOUND));
 
-        if (roomParticipantRepository.existsByRoomIdAndUserId(roomId, userId)) {
+        if (roomParticipantRepository.existsByRoomIdAndUserId(room.getId(), userId)) {
             throw new CustomException(RoomErrorCode.ALREADY_JOINED);
         }
 
-        int currentCount = roomParticipantRepository.countByRoomId(roomId);
+        int currentCount = roomParticipantRepository.countByRoomId(room.getId());
         if (currentCount >= room.getMemberCount()) {
             throw new CustomException(RoomErrorCode.ROOM_FULL);
         }
 
         RoomParticipant participant = RoomParticipant.builder()
                 .userId(userId)
-                .roomId(roomId)
+                .roomId(room.getId())
                 .isHost(false)
                 .build();
 
         roomParticipantRepository.save(participant);
+
+        return CreateRoomResponse.from(room);
     }
 
     /**
