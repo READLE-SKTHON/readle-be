@@ -19,7 +19,6 @@ import com.readle.readlebackend.domain.question.repository.QuestionRepository;
 import com.readle.readlebackend.global.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,11 +29,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 아직 문제가 생성되지 않은 기사를 하나 가져와서 (1) 난이도 1~5 판단, (2) 오늘의 학습 문제 10개,
+ * 지정된 newsId의 기사를 대상으로 (1) 난이도 1~5 판단, (2) 오늘의 학습 문제 10개,
  * (3) 게임용 문제 10개를 한 번의 Gemini 호출로 생성하고, 생성된 문제들을 questions 테이블에 저장한다.
  *
- * <p>이미 questions.news_id로 참조된 적 있는 기사는 다시 문제를 만들지 않는다
- * ({@link NewsRepository#findArticlesWithoutQuestions}).
+ * <p>이미 questions.news_id로 참조된 적 있는(=문제가 이미 생성된) 기사는 다시 문제를 만들지 않는다.
  */
 @Slf4j
 @Service
@@ -50,11 +48,13 @@ public class QuestionGenerationService {
     private final NewsRepository newsRepository;
 
     @Transactional
-    public QuestionGenerationResult generate() {
-        News news = newsRepository.findArticlesWithoutQuestions(PageRequest.of(0, 1))
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new CustomException(QuestionErrorCode.NO_ARTICLE_TO_GENERATE));
+    public QuestionGenerationResult generate(Long newsId) {
+        News news = newsRepository.findById(newsId)
+                .orElseThrow(() -> new CustomException(QuestionErrorCode.ARTICLE_NOT_FOUND));
+
+        if (questionRepository.existsByNewsId(newsId)) {
+            throw new CustomException(QuestionErrorCode.ARTICLE_ALREADY_HAS_QUESTIONS);
+        }
 
         String prompt = buildMakeQuestionPrompt(news.getTitle(), news.getContent());
         JsonNode schema = buildResponseSchema();
@@ -124,12 +124,11 @@ public class QuestionGenerationService {
     private String buildMakeQuestionPrompt(String articleTitle, String articleContent) {
         int totalPerSet = QUESTIONS_PER_CATEGORY * MainCategory.values().length;
 
+        // 고정 지침(캐싱 가능성을 위해 항상 동일한 내용)을 먼저 쓰고, 기사 제목/본문(매번 달라지는 내용)은 맨 뒤에 붙인다.
+        // Gemini의 암묵적 캐싱은 "요청 앞부분이 이전 요청과 동일할 때" 작동하므로, 이 순서를 지켜야 캐싱이 걸릴 수 있다.
         StringBuilder sb = new StringBuilder();
-        sb.append("너는 한국 대학생 문해력 학습 앱 'Readle'의 문제 출제자야. ");
-        sb.append("아래 뉴스 기사를 분석해서 난이도를 판단하고, 두 종류의 문제 세트를 만들어줘.\n\n");
-
-        sb.append("[기사 제목]\n").append(articleTitle).append("\n\n");
-        sb.append("[기사 본문]\n").append(articleContent).append("\n\n");
+        sb.append("너는 한국 대학생 문해력 학습 앱 'Readle'의 문제 출제자야. 기사 본문은 맨 마지막에 주어진다. ");
+        sb.append("아래 지침에 따라 기사를 분석해서 난이도를 판단하고, 두 종류의 문제 세트를 만들어줘.\n\n");
 
         sb.append("[1단계: 난이도 판단]\n");
         sb.append("어휘 난이도, 문장 길이와 복잡도, 필요한 배경지식 수준을 고려해서 이 기사를 1~5 사이의 정수로 판단해라 ")
@@ -140,50 +139,48 @@ public class QuestionGenerationService {
                 .append(QUESTIONS_PER_CATEGORY).append("개씩 만들어라: ")
                 .append("vocab(어휘력), info_extraction(정보추출), core_understanding(핵심파악), ")
                 .append("inference_judgment(추론및판단), structure(구조파악).\n");
-        sb.append("- questionFormat은 OX, multiple_choice, short_answer 중에서 고르되, ")
-                .append("1단계에서 판단한 level이 1이면 절대 short_answer를 쓰지 말고 OX와 multiple_choice만 사용해라. ")
-                .append("level이 2 이상이면 세 형식을 자유롭게 섞어라.\n");
-        sb.append("- content는 지문 전체를 이미 읽었다는 전제이므로 질문만 있어도 되고, ")
-                .append("필요하면 일부 문제에만 실제 기사 문장을 인용해도 된다.\n\n");
+        sb.append("- questionFormat은 OX, multiple_choice, short_answer 중에서 고르되, level이 1이면 short_answer는 절대 쓰지 말고 ")
+                .append("OX·multiple_choice만 사용해라. level이 2 이상이면 세 형식을 자유롭게 섞어라.\n");
+        sb.append("- content는 질문만 있어도 되고, 필요하면 일부 문제에만 실제 기사 문장을 인용해도 된다.\n\n");
 
         sb.append("[3단계: 게임용 문제 (gameQuestions) - 총 ").append(totalPerSet).append("개]\n");
         sb.append("사용자가 기사를 읽지 않은 상태에서, 문제 안에 포함된 문단 하나만 보고 푸는 문제야. ")
                 .append("마찬가지로 5개 카테고리를 각각 ").append(QUESTIONS_PER_CATEGORY).append("개씩 만들어라.\n");
         sb.append("- 모든 문제의 content 맨 앞에 기사에서 실제로 가져온 문단(문장 1~3개 정도)을 그대로 인용해서 ")
                 .append("\"[문단] ...\\n\\n[문제] ...\" 형태로 반드시 포함해라. 그 문단만 보고도 답할 수 있어야 한다.\n");
-        sb.append("- 오늘의 학습 문제보다 상대적으로 쉬운 문제로 만들어라. ")
-                .append("복잡한 추론보다는 문단에 직접 드러난 정보를 확인하는 수준으로 난이도를 낮춰라.\n");
-        sb.append("- questionFormat은 난이도(level)와 상관없이 OX, multiple_choice, short_answer를 자유롭게 섞어서 사용해라.\n\n");
+        sb.append("- dailyQuestions보다 쉽게 만들어라: 복잡한 추론보다는 문단에 직접 드러난 정보를 확인하는 수준으로.\n");
+        sb.append("- questionFormat은 level과 상관없이 OX, multiple_choice, short_answer를 자유롭게 섞어서 사용해라.\n\n");
 
         sb.append("[subCategory 설명 - 정확히 이 뜻에 맞는 것만 골라서 사용해라]\n");
-        sb.append("- vocab_appropriateness: 문맥상 특정 단어를 다른 단어로 바꿔도 어색하지 않은지, 즉 단어 사용의 적절성을 판단하는 문제\n");
-        sb.append("- vocab_meaning: 특정 단어/표현의 뜻(사전적 의미 또는 문맥적 의미)이 무엇인지 직접 묻는 문제\n");
-        sb.append("- vocab_paraphrase: 특정 표현을 의미가 같은 다른 말로 바꿔 쓰면 무엇인지 묻는 문제\n");
-        sb.append("- info_consistency: 주어진 진술이 지문 내용과 일치하는지/불일치하는지(사실 확인) 판단하는 문제\n");
-        sb.append("- info_evidence: 특정 주장이나 결론의 근거가 되는 문장/부분이 무엇인지 찾는 문제\n");
-        sb.append("- core_topic: 글이 '무엇에 대해' 다루고 있는지, 중심 소재/화제가 무엇인지 묻는 문제 (결론이 아니라 대상)\n");
-        sb.append("- core_title: 이 글에 어울리는 제목으로 가장 적절한 것을 고르는 문제\n");
-        sb.append("- core_gist: 글쓴이가 최종적으로 전달하려는 핵심 메시지/결론이 무엇인지 묻는 문제 (core_topic과 달리 '그래서 결론이 뭔지'에 초점)\n");
-        sb.append("- core_argument: 글쓴이나 등장인물의 주장/견해가 무엇인지 파악하는 문제\n");
-        sb.append("- inference_blank: 지문에 빈칸이 있다고 가정하고 그 빈칸에 들어갈 말을 문맥으로 추론하는 문제\n");
-        sb.append("- inference_implication: 특정 문장/표현에 직접 쓰이지 않은 함축적 의미나 의도를 추론하는 문제\n");
-        sb.append("- inference_continuation: 지문 뒤에 이어질 내용이 무엇일지 추론하는 문제\n");
-        sb.append("- structure_sentence_insertion: 주어진 문장 하나가 지문의 어느 위치에 들어가야 자연스러운지 찾는 문제\n");
-        sb.append("- structure_order: 문단이나 문장들을 논리적으로 올바른 순서로 배열하는 문제\n");
-        sb.append("- structure_irrelevant_sentence: 지문의 흐름과 관련 없는 문장을 찾아내는 문제\n\n");
+        sb.append("- vocab_appropriateness: 문맥상 단어를 다른 단어로 바꿔도 어색하지 않은지(적절성)를 판단\n");
+        sb.append("- vocab_meaning: 특정 단어/표현의 뜻(사전적·문맥적 의미)을 직접 물음\n");
+        sb.append("- vocab_paraphrase: 같은 의미의 다른 표현으로 바꿔 쓰기\n");
+        sb.append("- info_consistency: 진술이 지문 내용과 일치/불일치하는지(사실 확인)\n");
+        sb.append("- info_evidence: 주장이나 결론의 근거가 되는 문장을 찾기\n");
+        sb.append("- core_topic: 글이 '무엇에 대해' 다루는지 중심 소재/화제 (결론이 아니라 대상)\n");
+        sb.append("- core_title: 이 글에 어울리는 제목 고르기\n");
+        sb.append("- core_gist: 글쓴이가 최종적으로 전달하려는 핵심 메시지/결론 (core_topic과 달리 '그래서 결론이 뭔지'에 초점)\n");
+        sb.append("- core_argument: 글쓴이나 등장인물의 주장/견해 파악\n");
+        sb.append("- inference_blank: 빈칸에 들어갈 말을 문맥으로 추론\n");
+        sb.append("- inference_implication: 직접 쓰이지 않은 함축적 의미나 의도를 추론\n");
+        sb.append("- inference_continuation: 지문 뒤에 이어질 내용을 추론\n");
+        sb.append("- structure_sentence_insertion: 주어진 문장이 들어갈 자연스러운 위치 찾기\n");
+        sb.append("- structure_order: 문단/문장을 논리적으로 올바른 순서로 배열\n");
+        sb.append("- structure_irrelevant_sentence: 지문의 흐름과 관련 없는 문장 찾기\n\n");
 
         sb.append("[공통 규칙]\n");
-        sb.append("1. 각 문제의 subCategory는 mainCategory에 맞는 세부 유형 중, 위 설명에 정확히 부합하는 것만 골라라. ")
-                .append("설명과 안 맞는데 억지로 끼워맞추지 말고, 같은 mainCategory 안에서도 서로 다른 subCategory를 다양하게 써서 ")
-                .append("같은 세트(dailyQuestions 또는 gameQuestions) 안에 내용이 겹치는 문제가 나오지 않게 해라.\n");
-        sb.append("2. questionFormat이 multiple_choice이면 choices에 보기 4개를 넣고, ")
-                .append("answer는 choices 중 하나와 글자까지 정확히 일치해야 한다. ")
-                .append("OX면 choices는 빈 배열로 두고 answer는 'O' 또는 'X'로 해라. ")
-                .append("short_answer면 choices는 빈 배열로 둬라.\n");
-        sb.append("3. 모든 문제에는 정답 근거를 설명하는 explanation을 반드시 채워라.\n");
-        sb.append("4. 모든 문제에는 hint를 반드시 채워라. 정답을 직접 알려주지 말고, ")
-                .append("기사의 어느 부분을 다시 보면 좋을지 방향만 알려줘라. (빈 문자열 금지)\n");
-        sb.append("5. 출력은 지정된 JSON 스키마만 따르고, 스키마 밖의 다른 텍스트는 절대 포함하지 마라.\n");
+        sb.append("1. subCategory는 위 설명에 정확히 부합하는 것만 골라라. 같은 mainCategory 안에서도 서로 다른 subCategory를 ")
+                .append("다양하게 써서 같은 세트 안에 내용이 겹치지 않게 해라.\n");
+        sb.append("2. multiple_choice는 choices 4개 + answer는 그중 하나와 글자까지 일치. OX는 choices 빈 배열 + answer는 'O' 또는 'X'. ")
+                .append("short_answer는 choices 빈 배열.\n");
+        sb.append("3. explanation은 정답 근거를 알차고 구체적으로 설명하는 한 문장으로 반드시 채워라.\n");
+        sb.append("4. hint는 정답을 직접 알려주지 말고 기사의 어느 부분을 다시 보면 좋을지 방향을 알려주는 한 문장으로 반드시 채워라. ")
+                .append("(빈 문자열 금지)\n");
+        sb.append("5. explanation·hint는 각각 정확히 한 문장(줄바꿈·나열 금지)만 작성해라.\n");
+        sb.append("6. 출력은 지정된 JSON 스키마만 따르고, 스키마 밖의 다른 텍스트는 절대 포함하지 마라.\n\n");
+
+        sb.append("[기사 제목]\n").append(articleTitle).append("\n\n");
+        sb.append("[기사 본문]\n").append(articleContent);
 
         return sb.toString();
     }

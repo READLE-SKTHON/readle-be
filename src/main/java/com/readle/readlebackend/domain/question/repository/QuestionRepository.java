@@ -16,4 +16,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     // 문제가 하나라도 생성된(=처리 완료된) 기사 수
     @Query("SELECT COUNT(DISTINCT q.newsId) FROM Question q")
     long countDistinctNewsId();
+
+    // 해당 기사에 이미 생성된 문제가 있는지 확인 (중복 생성 방지용)
+    boolean existsByNewsId(Long newsId);
 }

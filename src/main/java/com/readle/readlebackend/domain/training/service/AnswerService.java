@@ -222,7 +222,8 @@ public class AnswerService {
         String prompt = buildFeedbackPrompt(question, request.getSelectedAnswer(), request.getReason());
         JsonNode schema = buildFeedbackResponseSchema();
 
-        String rawJson = geminiClient.generateJson(prompt, schema);
+        // 근거 채점은 정오답 판정 + 점수 매기기가 목적이라 thinking 없이도 품질 저하가 크지 않다고 판단해 thinking을 꺼서 응답 속도를 높인다.
+        String rawJson = geminiClient.generateJson(prompt, schema, 0);
 
         FeedbackResult result;
         try {
@@ -260,12 +261,11 @@ public class AnswerService {
      */
     private String buildFeedbackPrompt(Question question, String selectedAnswer, String justification) {
         StringBuilder sb = new StringBuilder();
-        sb.append("너는 한국 대학생 문해력 학습 앱 'Readle'의 전문 첨삭관이야. ");
-        sb.append("아래 문제와 정답 근거를 기준으로, 사용자가 제출한 답과 근거 글을 채점해줘.\n\n");
+        sb.append("너는 한국어 문해력 앱 Readle의 첨삭관이야. 아래 문제·정답 근거를 기준으로 사용자의 답과 근거를 채점해.\n\n");
 
         sb.append("[문제]\n").append(question.getContent()).append("\n\n");
         sb.append("[정답]\n").append(question.getAnswer()).append("\n\n");
-        sb.append("[정답 근거 (채점 기준으로만 참고하고, 사용자에게 그대로 노출하지 말 것)]\n")
+        sb.append("[정답 근거 (채점 기준용, 사용자에게 노출 금지)]\n")
                 .append(question.getExplanation() != null ? question.getExplanation() : "")
                 .append("\n\n");
 
@@ -274,34 +274,15 @@ public class AnswerService {
                 .append(justification != null && !justification.isBlank() ? justification : "(근거 미작성)")
                 .append("\n\n");
 
-        sb.append("[1단계: 정오답 판정 (resultStatus)]\n");
-        sb.append("- correct: 답이 정답과 일치하고, 근거도 정답 근거의 핵심 논리를 스스로의 말로 타당하게 설명한 경우\n");
-        sb.append("- incorrect: 답이 정답과 다르거나, 근거가 명백히 틀린 논리를 담고 있는 경우\n");
-        sb.append("- insufficient_reasoning: 답 자체는 맞았지만 근거가 없거나 너무 짧거나 정답과 무관해서, ")
-                .append("실제로 이해하고 맞혔다고 보기 어려운 경우\n\n");
-
-        sb.append("[2단계: 종합 점수 (overallScore, 0~100)]\n");
-        sb.append("정답 여부와 근거의 논리적 타당성·완성도를 종합해서 0~100 사이 정수로 매겨라.\n\n");
-
-        sb.append("[3단계: 피드백]\n");
-        sb.append("- mistakeFeedback: resultStatus가 incorrect 또는 insufficient_reasoning일 때만 채워라. ")
-                .append("어디가 왜 틀렸는지/부족한지 구체적으로 짚어주고, correct면 빈 문자열로 둬라.\n");
-        sb.append("- feedback: 정오답과 무관하게 항상 채워야 하는 전반적인 코멘트다. ")
-                .append("전문 첨삭관처럼 잘한 점과 보완할 점을 함께 짚어주는 격려하는 톤으로 작성해라.\n\n");
-
-        sb.append("[4단계: 5개 능력치 평가 (skillScores) - 반드시 5개 전부, 각각 0~100점]\n");
-        sb.append("사용자가 작성한 근거 글에서 드러나는 수준만 보고 아래 5개 항목을 각각 평가해라. ")
-                .append("근거 글에 특정 능력을 판단할 단서가 부족하면 그 사실을 feedback에 적고 중간 수준 점수를 줘라.\n");
-        sb.append("- vocab(어휘력): 근거 글에서 사용한 단어 선택이 정확하고 문맥에 적절한가\n");
-        sb.append("- reading(독해력): 지문/문제 내용을 실제로 정확히 이해했다는 근거가 글에 드러나는가\n");
-        sb.append("- inference(추론력): 명시되지 않은 내용을 논리적으로 추론해서 근거를 폈는가\n");
-        sb.append("- critical_thinking(비판적 사고력): 근거를 뒷받침하는 논리 전개가 타당하고 다른 가능성도 고려했는가\n");
-        sb.append("- expression(표현력): 자신의 생각을 명확하고 조리 있는 문장으로 표현했는가\n\n");
-
-        sb.append("[출력 규칙]\n");
-        sb.append("1. 정답을 새로 알려주는 방식이 아니라, 사용자가 이미 제출한 내용을 근거로 평가하고 설명해라.\n");
-        sb.append("2. skillScores는 위 5개 카테고리를 각각 정확히 한 번씩만, 총 5개 포함해라.\n");
-        sb.append("3. 출력은 지정된 JSON 스키마만 따르고, 스키마 밖의 다른 텍스트는 절대 포함하지 마라.\n");
+        sb.append("resultStatus: correct=답·근거 모두 타당 / incorrect=답 틀림 또는 근거 논리 명백히 틀림 / insufficient_reasoning=답은 맞았으나 근거 없음·무관·부실\n");
+        sb.append("overallScore(0~100): 정답 여부+근거 타당성 종합 점수\n");
+        sb.append("mistakeFeedback: incorrect·insufficient_reasoning일 때만, 정답 근거를 인용해 무엇이 왜 틀렸는지를 담은 한 문장. correct면 빈 문자열\n");
+        sb.append("feedback: 사용자가 쓴 답/근거 내용을 구체적으로 짚어 잘한 점 또는 보완점을 담은 한 문장, 격려 톤\n");
+        sb.append("skillScores(5개 필수, 각 0~100, 근거 글만 기준): ")
+                .append("vocab=단어 선택 정확성/문맥 적합성, reading=지문·문제 이해도, inference=비명시 내용의 논리적 추론, ")
+                .append("critical_thinking=논리 전개의 타당성, expression=명확하고 조리 있는 표현. ")
+                .append("단서 부족 시 feedback에 언급하고 중간 점수 부여\n");
+        sb.append("규칙: 정답 재안내 금지(제출 내용 기준 평가) / skillScores 5개 각 1회 / mistakeFeedback·feedback은 각각 정확히 한 문장(줄바꿈·나열 금지) / JSON 스키마만 출력, 그 외 텍스트 금지\n");
 
         return sb.toString();
     }
