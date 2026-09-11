@@ -164,7 +164,7 @@ public class RoomService {
     public StartGameResponse startGame(Long userId, Long roomId) {
         // 동시 시작 요청 방지: 이 방 행을 잠가서 "이미 시작됐는지 확인 → 문제 배정/시작 처리"가
         // 원자적으로 이뤄지게 한다. 같은 방에 대한 두 번째 요청은 첫 번째가 커밋될 때까지 여기서 대기한다.
-        GameRoom room = gameRoomRepository.findById(roomId)
+        GameRoom room = gameRoomRepository.findByIdForUpdate(roomId)
                 .orElseThrow(() -> new CustomException(RoomErrorCode.ROOM_NOT_FOUND));
 
         RoomParticipant participant = roomParticipantRepository.findByRoomIdAndUserId(roomId, userId)
