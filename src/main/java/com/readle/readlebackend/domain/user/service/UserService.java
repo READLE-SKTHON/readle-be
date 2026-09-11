@@ -11,7 +11,6 @@ import com.readle.readlebackend.global.auth.AuthErrorCode;
 import com.readle.readlebackend.global.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,7 +32,7 @@ public class UserService {
     public AllRankingResponse getAllRanking(Long userId) {
 
         // 전체 유저를 xp 내림차순으로 조회
-        List<User> allUsers = userRepository.findAll(Sort.by(Sort.Direction.DESC, "xp"));
+        List<User> allUsers = userRepository.findAllByOrderByXpDesc();
 
         // 랭킹 목록(상위 7명) + 내 순위 계산 (7등 밖일 때만 myRank 표시)
         List<AllRankingResponse.RankingItem> rankings = new ArrayList<>();
