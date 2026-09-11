@@ -198,12 +198,7 @@ public class RoomService {
             throw new CustomException(RoomErrorCode.ROOM_ALREADY_STARTED);
         }
 
-        // 이 방에서 이전 판까지 이미 나온 문제는 재사용하지 않는다.
-        Set<Long> usedQuestionIds = gameRoomQuestionRepository.findAllByRoomId(roomId).stream()
-                .map(GameRoomQuestion::getQuestionId)
-                .collect(Collectors.toSet());
-
-        List<Question> pool = findEligibleQuestions(room.getCategory(), room.getDifficulty(), usedQuestionIds);
+        List<Question> pool = findEligibleQuestions(room.getCategory(), room.getDifficulty());
         if (pool.size() < room.getQuestionCount()) {
             throw new CustomException(RoomErrorCode.INSUFFICIENT_QUESTIONS);
         }
@@ -591,12 +586,8 @@ public class RoomService {
                 .collect(Collectors.toMap(User::getId, User::getNickname));
     }
 
-    /**
-     * 방 category(전체 포함)/difficulty(레벨 범위)에 맞는 게임용 문제 후보를 조회한다.
-     * {@code excludedQuestionIds} 에 담긴 문제(이 방에서 이전 판까지 이미 나온 문제)는 후보에서 제외한다.
-     */
-    private List<Question> findEligibleQuestions(Category category, Difficulty difficulty,
-                                                 Set<Long> excludedQuestionIds) {
+    /** 방 category(전체 포함)/difficulty(레벨 범위)에 맞는 게임용 문제 후보를 조회한다. 판이 바뀌어도 재사용 가능하다. */
+    private List<Question> findEligibleQuestions(Category category, Difficulty difficulty) {
         List<Integer> levels = levelsFor(difficulty);
 
         List<Question> pool;
@@ -617,9 +608,7 @@ public class RoomService {
             pool = questionRepository.findAllByNewsIdInAndGameModeAndLevelIn(newsIds, ROOM_GAME_MODE, levels);
         }
 
-        return pool.stream()
-                .filter(q -> !excludedQuestionIds.contains(q.getId()))
-                .toList();
+        return pool;
     }
 
     /** 난이도 → News/Question level(1~5) 매핑. 하=1,2 / 중=3,4 / 상=5 / 랜덤=1~5. */

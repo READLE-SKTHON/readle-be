@@ -1,5 +1,6 @@
 package com.readle.readlebackend.domain.auth.controller;
 
+import com.readle.readlebackend.domain.auth.dto.request.LoginByNicknameRequest;
 import com.readle.readlebackend.domain.auth.dto.request.LoginRequest;
 import com.readle.readlebackend.domain.auth.dto.response.LoginResponse;
 import com.readle.readlebackend.domain.auth.service.AuthService;
@@ -31,6 +32,16 @@ public class AuthController {
             + "비밀번호는 검증하지 않습니다. 이후 요청부터는 응답의 userId를 X-USER-ID 헤더에 담아 보내면 됩니다.")
     public ResponseEntity<BaseResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
         LoginResponse response = authService.login(request.getUserId());
+        return ResponseEntity.ok(BaseResponse.success("로그인되었습니다.", response));
+    }
+
+    @PostMapping("/login/by-name")
+    @Operation(summary = "닉네임+학교 로그인", description = "닉네임과 학교 이름이 일치하는 유저인지 확인하고 프로필을 반환합니다. "
+            + "학교 이름은 \"서경대\"/\"서경대학교\", \"OO고\"/\"OO고등학교\" 처럼 줄인 표기와 정식 표기를 구분하지 않습니다. "
+            + "비밀번호는 검증하지 않습니다. 이후 요청부터는 응답의 userId를 X-USER-ID 헤더에 담아 보내면 됩니다.")
+    public ResponseEntity<BaseResponse<LoginResponse>> loginByNickname(
+            @Valid @RequestBody LoginByNicknameRequest request) {
+        LoginResponse response = authService.loginByNickname(request.getNickname(), request.getSchoolName());
         return ResponseEntity.ok(BaseResponse.success("로그인되었습니다.", response));
     }
 }
