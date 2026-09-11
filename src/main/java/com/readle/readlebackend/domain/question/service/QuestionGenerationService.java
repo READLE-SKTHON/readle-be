@@ -8,6 +8,7 @@ import com.readle.readlebackend.domain.news.entity.News;
 import com.readle.readlebackend.domain.news.repository.NewsRepository;
 import com.readle.readlebackend.domain.question.client.GeminiClient;
 import com.readle.readlebackend.domain.question.dto.GeneratedQuestionDto;
+import com.readle.readlebackend.domain.question.dto.QuestionGenerationRequest;
 import com.readle.readlebackend.domain.question.dto.QuestionGenerationResult;
 import com.readle.readlebackend.domain.question.entity.Question;
 import com.readle.readlebackend.domain.question.enums.GameMode;

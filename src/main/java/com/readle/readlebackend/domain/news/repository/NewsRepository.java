@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
+import java.util.List;
+
 public interface NewsRepository extends JpaRepository<News, Long> {
 
     /**
@@ -19,4 +21,5 @@ public interface NewsRepository extends JpaRepository<News, Long> {
             ORDER BY n.id ASC
             """)
     List<News> findArticlesWithoutQuestions(Pageable pageable);
+    List<News> findAllByCategory(NewsCategory category);
 }

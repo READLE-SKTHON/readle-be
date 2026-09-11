@@ -19,4 +19,14 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
 
     // 해당 기사에 이미 생성된 문제가 있는지 확인 (중복 생성 방지용)
     boolean existsByNewsId(Long newsId);
+
+    /** 카테고리 제한 없이(방 category = 전체) 게임 모드/레벨로만 후보를 뽑을 때 사용. */
+    List<Question> findAllByGameModeAndLevelIn(GameMode gameMode, List<Integer> levels);
+
+    /** 특정 뉴스 카테고리(News.newsId 목록)로 제한해서 후보를 뽑을 때 사용. */
+    List<Question> findAllByNewsIdInAndGameModeAndLevelIn(
+            List<Long> newsIds, GameMode gameMode, List<Integer> levels);
+
+    // 오늘의 문제(daily_solo) 조회용 (특정 게임 모드 + 특정 레벨 + 오늘 생성된 것)
+    List<Question> findAllByGameModeAndLevelInAndCreatedAtBetween(GameMode gameMode, List<Integer> levels, LocalDateTime start, LocalDateTime end);
 }

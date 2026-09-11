@@ -5,9 +5,10 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-
-import java.util.List;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Builder
@@ -27,4 +28,7 @@ public class RoomParticipantsResponse {
 
     @Schema(description = "참여자 목록")
     private List<ParticipantResponse> participants;
+
+    @Schema(description = "게임 시작 시각 (null이면 아직 대기중)")
+    private LocalDateTime startedAt;
 }

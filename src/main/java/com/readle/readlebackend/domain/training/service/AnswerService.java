@@ -13,6 +13,7 @@ import com.readle.readlebackend.domain.question.enums.GameMode;
 import com.readle.readlebackend.domain.question.enums.QuestionFormat;
 import com.readle.readlebackend.domain.question.repository.QuestionRepository;
 import com.readle.readlebackend.domain.training.dto.request.SubmitAnswerRequest;
+import com.readle.readlebackend.domain.training.dto.response.AnswerResultResponse;
 import com.readle.readlebackend.domain.training.dto.response.SubmitAnswerResponse;
 import com.readle.readlebackend.domain.training.dto.response.TodayQuestionsResponse;
 import com.readle.readlebackend.domain.training.entity.Answer;
@@ -59,11 +60,8 @@ public class AnswerService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(AuthErrorCode.INVALID_USER_ID));
 
-        // 오늘(00:00~24:00) 생성된 daily_solo 문제 조회
-        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
-        LocalDateTime endOfDay = startOfDay.plusDays(1);
-        List<Question> todayQuestions = questionRepository
-                .findByGameModeAndCreatedAtBetween(GameMode.daily_solo, startOfDay, endOfDay);
+        // 오늘 생성된 daily_solo 문제 조회
+        List<Question> todayQuestions = findTodayQuestions(user.getLevel());
 
         // 오늘의 문제가 존재하는지 확인
         if (todayQuestions.isEmpty()) {
@@ -121,6 +119,13 @@ public class AnswerService {
                 .questionCount(questionResponses.size())
                 .questions(questionResponses)
                 .build();
+    }
+
+    // 오늘(00:00~24:00) 생성된, 특정 유저 레벨에 맞는 daily_solo 문제 조회
+    private List<Question> findTodayQuestions(Long userLevel) {
+        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+        LocalDateTime endOfDay = startOfDay.plusDays(1);
+        return questionRepository.findAllByGameModeAndLevelInAndCreatedAtBetween(GameMode.daily_solo, List.of(userLevel.intValue()), startOfDay, endOfDay);
     }
 
     // Question.choices(JSON 문자열)를 List<String>으로 파싱
@@ -366,5 +371,64 @@ public class AnswerService {
     }
 
     private record SkillScoreDto(SkillCategory skillCategory, Integer score, String feedback) {
+    }
+}
+
+
+    // 오늘의 퀴즈 결과 조회
+    // 호출할 때마다 유저의 xp, level, currentStreak을 갱신해서 저장하기 때문에 @Transactional 사용
+    @Transactional
+    public AnswerResultResponse getAnswerResult(Long userId) {
+
+        // 사용자가 존재하는지 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(AuthErrorCode.INVALID_USER_ID));
+
+        // 오늘 생성된 daily_solo 문제 조회
+        List<Question> todayQuestions = findTodayQuestions(user.getLevel());
+        if (todayQuestions.isEmpty()) {
+            log.warn("[AnswerService] 오늘의 문제가 아직 준비되지 않았습니다: userId={}", userId);
+            throw new CustomException(AnswerErrorCode.TODAY_QUESTIONS_NOT_FOUND);
+        }
+
+        // 오늘 문제에 대한 제출 기록 조회
+        List<Long> questionIds = new ArrayList<>();
+        for (Question q : todayQuestions) {
+            questionIds.add(q.getId());
+        }
+        List<Answer> todayAnswers = answerRepository.findByUserIdAndQuestionIdIn(userId, questionIds);
+
+        // 오늘 문제를 다 풀었는지 확인
+        if (todayAnswers.size() < todayQuestions.size()) {
+            log.warn("[AnswerService] 오늘 문제풀이 미완료: userId={}, 제출={}, 전체={}", userId, todayAnswers.size(), todayQuestions.size());
+            throw new CustomException(AnswerErrorCode.TODAY_NOT_COMPLETED);
+        }
+
+        // 정답 수, 획득 경험치 집계
+        int correctCount = 0;
+        int earnedExp = 0;
+        for (Answer answer : todayAnswers) {
+            if (answer.getResultStatus() == ResultStatus.correct) {
+                correctCount++;
+            }
+            earnedExp += answer.getOverallScore();
+        }
+        int accuracy = correctCount * 100 / todayQuestions.size();
+
+        // 사용자 xp/레벨/연속학습일 갱신
+        user.applyDailyResult(earnedExp, LocalDate.now());
+        userRepository.save(user);
+
+        // 로그 출력
+        log.info("[AnswerService] 오늘 문제풀이 결과 조회 성공: userId={}, correctCount={}, earnedExp={}",
+                userId, correctCount, earnedExp);
+
+        // 응답 세팅 (레벨/연속학습일은 마이페이지 API에서 보여주는 값이라 여기선 응답에 안 담음)
+        return AnswerResultResponse.builder()
+                .totalQuestions(todayQuestions.size())
+                .correctCount(correctCount)
+                .accuracy(accuracy)
+                .earnedExp(earnedExp)
+                .build();
     }
 }
