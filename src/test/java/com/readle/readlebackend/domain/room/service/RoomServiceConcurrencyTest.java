@@ -1,5 +1,10 @@
 package com.readle.readlebackend.domain.room.service;
 
+import com.readle.readlebackend.domain.game.dto.request.SubmitAnswerRequest;
+import com.readle.readlebackend.domain.game.entity.GameRoomAnswer;
+import com.readle.readlebackend.domain.game.entity.GameRoomQuestion;
+import com.readle.readlebackend.domain.game.repository.GameRoomAnswerRepository;
+import com.readle.readlebackend.domain.game.repository.GameRoomQuestionRepository;
 import com.readle.readlebackend.domain.news.entity.News;
 import com.readle.readlebackend.domain.news.enums.NewsCategory;
 import com.readle.readlebackend.domain.news.repository.NewsRepository;
@@ -26,6 +31,7 @@ import org.springframework.context.annotation.Import;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -45,6 +51,7 @@ class RoomServiceConcurrencyTest {
 
     // V2__seed_users.sql 로 항상 존재하는 시드 유저.
     private static final Long HOST_USER_ID = 1L;
+    private static final Long OTHER_USER_ID = 2L;
 
     @Autowired
     private RoomService roomService;
@@ -54,6 +61,12 @@ class RoomServiceConcurrencyTest {
 
     @Autowired
     private RoomParticipantRepository roomParticipantRepository;
+
+    @Autowired
+    private GameRoomQuestionRepository gameRoomQuestionRepository;
+
+    @Autowired
+    private GameRoomAnswerRepository gameRoomAnswerRepository;
 
     @Autowired
     private NewsRepository newsRepository;
@@ -138,5 +151,102 @@ class RoomServiceConcurrencyTest {
         assertThat(outcomes).hasSize(2);
         assertThat(outcomes).containsExactlyInAnyOrder(
                 "SUCCESS", RoomErrorCode.ROOM_ALREADY_STARTED.getCode());
+    }
+
+    @Test
+    void 서로_다른_유저가_동시에_정답을_제출해도_등수가_겹치지_않는다() throws InterruptedException {
+        News news = newsRepository.save(News.builder()
+                .title("테스트 기사")
+                .category(NewsCategory.전체)
+                .publisher("테스트 언론사")
+                .publishedAt(LocalDateTime.now())
+                .content("테스트 본문")
+                .sourceUrl("https://example.com/test")
+                .level(1)
+                .build());
+
+        Question question = questionRepository.save(Question.builder()
+                .newsId(news.getId())
+                .content("동시 제출 테스트 문제")
+                .questionFormat(QuestionFormat.OX)
+                .choices("[]")
+                .answer("O")
+                .explanation("설명")
+                .hint("힌트")
+                .gameMode(GameMode.category_practice)
+                .mainCategory(MainCategory.vocab)
+                .subCategory(SubCategory.vocab_meaning)
+                .level(1)
+                .build());
+
+        GameRoom room = gameRoomRepository.save(GameRoom.builder()
+                .roomCode(9998L)
+                .inviteLink("https://dummy-invite-link.com")
+                .category(Category.전체)
+                .difficulty(Difficulty.랜덤)
+                .timer(30)
+                .memberCount(4)
+                .questionCount(1)
+                .build());
+        room.start();
+        gameRoomRepository.save(room);
+
+        gameRoomQuestionRepository.save(GameRoomQuestion.builder()
+                .roomId(room.getId())
+                .questionId(question.getId())
+                .displayOrder(0)
+                .build());
+
+        roomParticipantRepository.save(RoomParticipant.builder()
+                .userId(HOST_USER_ID).roomId(room.getId()).isHost(true).build());
+        roomParticipantRepository.save(RoomParticipant.builder()
+                .userId(OTHER_USER_ID).roomId(room.getId()).isHost(false).build());
+
+        int threadCount = 2;
+        List<Long> submitters = List.of(HOST_USER_ID, OTHER_USER_ID);
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch readyLatch = new CountDownLatch(threadCount);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(threadCount);
+        List<String> outcomes = Collections.synchronizedList(new ArrayList<>());
+
+        for (Long submitterId : submitters) {
+            executor.submit(() -> {
+                readyLatch.countDown();
+                try {
+                    startLatch.await();
+                    roomService.submitAnswer(submitterId, room.getId(), 0,
+                            SubmitAnswerRequest.builder().selectedAnswer("O").build());
+                    outcomes.add("SUCCESS");
+                } catch (CustomException e) {
+                    outcomes.add(e.getErrorCode().getCode());
+                } catch (Exception e) {
+                    outcomes.add("UNEXPECTED_ERROR: " + e);
+                } finally {
+                    doneLatch.countDown();
+                }
+            });
+        }
+
+        readyLatch.await();
+        startLatch.countDown();
+        boolean finished = doneLatch.await(10, TimeUnit.SECONDS);
+        executor.shutdown();
+
+        assertThat(finished).as("두 제출이 제한 시간 내에 끝나야 함").isTrue();
+        assertThat(outcomes).containsExactly("SUCCESS", "SUCCESS");
+
+        List<GameRoomAnswer> answers = gameRoomAnswerRepository
+                .findAllByRoomIdAndQuestionId(room.getId(), question.getId());
+        assertThat(answers).hasSize(2);
+        assertThat(answers).allMatch(GameRoomAnswer::getIsCorrect);
+
+        List<Integer> scores = answers.stream()
+                .map(GameRoomAnswer::getScore)
+                .sorted(Comparator.reverseOrder())
+                .toList();
+
+        // 둘 다 정답이니 1등(50점)/2등(30점)으로 갈려야 하며, 둘 다 50점(등수 겹침)이면 안 된다.
+        assertThat(scores).containsExactly(50, 30);
     }
 }

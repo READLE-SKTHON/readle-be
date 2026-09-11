@@ -19,7 +19,9 @@ public enum RoomErrorCode implements BaseErrorCode {
     ROOM_ALREADY_STARTED("R008", "이미 시작된 방입니다.", HttpStatus.CONFLICT),
     INSUFFICIENT_QUESTIONS("R009", "방 설정(카테고리/난이도)에 맞는 문제가 부족합니다.", HttpStatus.BAD_REQUEST),
     ROOM_NOT_STARTED("R010", "아직 시작되지 않은 방입니다.", HttpStatus.BAD_REQUEST),
-    QUESTION_ORDER_OUT_OF_RANGE("R011", "존재하지 않는 문제 순서입니다.", HttpStatus.NOT_FOUND);
+    QUESTION_ORDER_OUT_OF_RANGE("R011", "존재하지 않는 문제 순서입니다.", HttpStatus.NOT_FOUND),
+    ALREADY_ANSWERED("R012", "이미 이 문제에 답을 제출했습니다.", HttpStatus.CONFLICT),
+    ANSWER_WINDOW_CLOSED("R013", "지금은 이 문제의 답을 제출할 수 있는 시간이 아닙니다.", HttpStatus.BAD_REQUEST);
 
     private final String code;
     private final String message;
