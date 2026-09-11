@@ -77,7 +77,7 @@ public class QuestionGenerationService {
             questions.add(toQuestionEntity(dto, GameMode.daily_solo, result.level()));
         }
         for (GeneratedQuestionDto dto : result.gameQuestions()) {
-            questions.add(toQuestionEntity(dto, GameMode.category_practice, result.level()));
+            questions.add(toQuestionEntity(dto, GameMode.room, result.level()));
         }
 
         questionRepository.saveAll(questions);
