@@ -1,6 +1,7 @@
 package com.readle.readlebackend.domain.user.controller;
 
 import com.readle.readlebackend.domain.user.dto.response.AllRankingResponse;
+import com.readle.readlebackend.domain.user.dto.response.SchoolRankingResponse;
 import com.readle.readlebackend.domain.user.service.UserService;
 import com.readle.readlebackend.global.auth.CurrentUser;
 import com.readle.readlebackend.global.common.BaseResponse;
@@ -32,5 +33,18 @@ public class UserController {
 
         // 응답 반환
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(200, "전체 랭킹 조회 성공", response));
+    }
+
+    // 학교별 랭킹 조회
+    @Operation(summary = "학교별 랭킹 조회 API", description = "소속 학생 xp 평균 기준 상위 7개교 + 내 학교 순위를 조회하는 API")
+    @GetMapping("/ranking/school")
+    public ResponseEntity<BaseResponse<SchoolRankingResponse>> getSchoolRanking(
+            @CurrentUser Long userId) {
+
+        // service 호출
+        SchoolRankingResponse response = userService.getSchoolRanking(userId);
+
+        // 응답 반환
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(200, "학교별 랭킹 조회 성공", response));
     }
 }
