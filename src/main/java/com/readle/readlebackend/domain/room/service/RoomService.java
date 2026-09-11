@@ -282,8 +282,10 @@ public class RoomService {
             throw new CustomException(RoomErrorCode.ANSWER_WINDOW_CLOSED);
         }
 
+        // 동시 제출 방지: 이 방/문제 배정 행을 잠가서 "정답 개수 세기 → 등수 결정 → 저장"이
+        // 원자적으로 이뤄지게 한다. 같은 문제에 대한 다른 유저의 동시 제출은 여기서 대기한다.
         GameRoomQuestion assignment = gameRoomQuestionRepository
-                .findByRoomIdAndDisplayOrder(roomId, order)
+                .findByRoomIdAndDisplayOrderForUpdate(roomId, order)
                 .orElseThrow(() -> new CustomException(RoomErrorCode.QUESTION_ORDER_OUT_OF_RANGE));
 
         if (gameRoomAnswerRepository.existsByRoomIdAndQuestionIdAndUserId(roomId, assignment.getQuestionId(), userId)) {
