@@ -67,7 +67,7 @@ public class RoomService {
      * QuestionGenerationService 가 "게임용 문제"를 category_practice 로 저장하고 있어
      * 실제 데이터와 맞추기 위해 우선 이 값으로 조회한다. 생성 쪽이 정리되면 함께 바꿀 것.
      */
-    private static final GameMode ROOM_GAME_MODE = GameMode.category_practice;
+    private static final GameMode ROOM_GAME_MODE = GameMode.room;
 
     /** 정답 공개 페이즈 고정 길이(초). */
     private static final int REVEAL_SECONDS = 3;
