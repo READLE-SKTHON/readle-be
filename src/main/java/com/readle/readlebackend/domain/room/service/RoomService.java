@@ -20,6 +20,7 @@ import com.readle.readlebackend.domain.news.enums.NewsCategory;
 import com.readle.readlebackend.domain.news.repository.NewsRepository;
 import com.readle.readlebackend.domain.question.entity.Question;
 import com.readle.readlebackend.domain.question.enums.GameMode;
+import com.readle.readlebackend.domain.question.enums.QuestionFormat;
 import com.readle.readlebackend.domain.question.repository.QuestionRepository;
 import com.readle.readlebackend.domain.room.dto.request.CreateRoomRequest;
 import com.readle.readlebackend.domain.room.dto.response.CreateRoomResponse;
@@ -292,7 +293,7 @@ public class RoomService {
         Question question = questionRepository.findById(assignment.getQuestionId())
                 .orElseThrow(() -> new CustomException(RoomErrorCode.QUESTION_ORDER_OUT_OF_RANGE));
 
-        boolean isCorrect = isCorrectAnswer(question.getAnswer(), request.getSelectedAnswer());
+        boolean isCorrect = isCorrectAnswer(question, request.getSelectedAnswer());
         int score = 0;
         if (isCorrect) {
             long correctSoFar = gameRoomAnswerRepository
@@ -406,11 +407,39 @@ public class RoomService {
     private record GameProgress(GamePhase phase, int questionOrder, int remainingSeconds) {
     }
 
-    private boolean isCorrectAnswer(String correctAnswer, String selectedAnswer) {
-        if (correctAnswer == null || selectedAnswer == null) {
+    /**
+     * 정답 여부를 판단한다. {@code multiple_choice} 는 보기 텍스트를 그대로 비교하는 대신
+     * "몇 번째 보기가 정답인지" 위치로 비교한다 (프론트가 긴 한글 텍스트를 그대로 되돌려보내야
+     * 하는 불안정함을 없애기 위함). {@code selectedAnswer} 는 1부터 시작하는 인덱스 문자열("1"~"4").
+     * OX/단답형은 기존처럼 텍스트를 trim 후 대소문자 무시하고 비교한다.
+     */
+    private boolean isCorrectAnswer(Question question, String selectedAnswer) {
+        if (selectedAnswer == null || selectedAnswer.isBlank() || question.getAnswer() == null) {
             return false;
         }
-        return correctAnswer.trim().equalsIgnoreCase(selectedAnswer.trim());
+
+        if (question.getQuestionFormat() == QuestionFormat.multiple_choice) {
+            return isCorrectMultipleChoiceIndex(question, selectedAnswer);
+        }
+
+        return question.getAnswer().trim().equalsIgnoreCase(selectedAnswer.trim());
+    }
+
+    private boolean isCorrectMultipleChoiceIndex(Question question, String selectedAnswer) {
+        List<String> choices = parseChoices(question.getChoices());
+        int correctIndex = choices.indexOf(question.getAnswer());
+        if (correctIndex < 0) {
+            log.warn("문제 {} 의 answer가 choices 목록 안에 없습니다. answer={}, choices={}",
+                    question.getId(), question.getAnswer(), choices);
+            return false;
+        }
+
+        try {
+            int submittedIndex = Integer.parseInt(selectedAnswer.trim()) - 1; // 1-based -> 0-based
+            return submittedIndex == correctIndex;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
     private int scoreForRank(int rank) {

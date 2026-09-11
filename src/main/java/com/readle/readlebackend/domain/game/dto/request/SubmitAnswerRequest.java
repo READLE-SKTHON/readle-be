@@ -16,7 +16,8 @@ import lombok.Setter;
 @Schema(description = "정답 제출 요청")
 public class SubmitAnswerRequest {
 
-    @Schema(description = "제출한 답 (OX: O/X, 객관식: 보기 텍스트 그대로, 단답형: 텍스트)", example = "O")
+    @Schema(description = "제출한 답. OX: \"O\"/\"X\", 객관식(multiple_choice): 1부터 시작하는 보기 번호(\"1\"~\"4\"), "
+            + "단답형(short_answer): 텍스트 그대로", example = "2")
     @NotBlank
     private String selectedAnswer;
 }
