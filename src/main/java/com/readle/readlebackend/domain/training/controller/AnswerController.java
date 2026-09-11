@@ -1,6 +1,7 @@
 package com.readle.readlebackend.domain.training.controller;
 
 import com.readle.readlebackend.domain.training.dto.request.SubmitAnswerRequest;
+import com.readle.readlebackend.domain.training.dto.response.AnswerResultResponse;
 import com.readle.readlebackend.domain.training.dto.response.SubmitAnswerResponse;
 import com.readle.readlebackend.domain.training.dto.response.TodayQuestionsResponse;
 import com.readle.readlebackend.domain.training.service.AnswerService;
@@ -48,5 +49,18 @@ public class AnswerController {
 
         // 응답 반환
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(200, "답안 제출 성공", response));
+    }
+
+    // 오늘 문제풀이 최종 결과 조회
+    @Operation(summary = "오늘 문제풀이 최종 결과 조회", description = "오늘 제출한 문제들을 집계하고, xp/레벨/연속학습일을 갱신하는 API")
+    @GetMapping("/training/result/today")
+    public ResponseEntity<BaseResponse<AnswerResultResponse>> getAnswerResult(
+            @CurrentUser Long userId) {
+
+        // service 호출
+        AnswerResultResponse response = answerService.getAnswerResult(userId);
+
+        // 응답 반환
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(200, "오늘 문제풀이 결과 조회 성공", response));
     }
 }

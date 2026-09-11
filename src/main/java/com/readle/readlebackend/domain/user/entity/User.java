@@ -56,4 +56,36 @@ public class User extends BaseTimeEntity {
 
     @Column(name = "news_read_count")
     private Integer newsReadCount;
+
+    // 오늘의 퀴즈 결과 반영 및 xp & 레벨 계산 & 연속 학습일 갱신
+    public void applyDailyResult(int earnedExp, LocalDate today) {
+        this.xp = (this.xp == null ? 0 : this.xp) + earnedExp;
+        this.level = calculateLevel(this.xp);
+
+        // 마지막 학습일이 어제인지 확인
+        if (this.lastActivityDate == null || !this.lastActivityDate.isEqual(today)) {
+
+            // 마지막 학습일이 어제일 때
+            if (this.lastActivityDate != null && this.lastActivityDate.isEqual(today.minusDays(1))) {
+                this.currentStreak = this.currentStreak + 1;
+            }
+
+            // 어제 활동을 안했거나 첫 활동일 때
+            else {
+                this.currentStreak = 1L;
+            }
+
+            // 마지막 학습일을 오늘로 바꾸기
+            this.lastActivityDate = today;
+        }
+    }
+
+    // Level 구간
+    private Long calculateLevel(int xp) {
+        if (xp < 200) return 1L;
+        if (xp < 600) return 2L;
+        if (xp < 1400) return 3L;
+        if (xp < 2400) return 4L;
+        return 5L;
+    }
 }
