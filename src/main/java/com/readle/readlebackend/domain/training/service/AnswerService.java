@@ -61,13 +61,32 @@ public class AnswerService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(AuthErrorCode.INVALID_USER_ID));
 
-        // 오늘 생성된 daily_solo 문제 조회
-        List<Question> todayQuestions = findTodayQuestions(user.getLevel());
+        LocalDate today = LocalDate.now();
 
-        // 오늘의 문제가 존재하는지 확인
+        // 오늘 유저 레벨의 대표 기사 조회 (대표 기사 자체가 없으면 보여줄 게 없으니 에러)
+        var representative = dailyRepresentativeArticleRepository
+                .findByRepDateAndLevel(today, user.getLevel().intValue())
+                .orElseThrow(() -> {
+                    log.warn("[AnswerService] 오늘의 대표 기사가 아직 없습니다: userId={}", userId);
+                    return new CustomException(AnswerErrorCode.TODAY_QUESTIONS_NOT_FOUND);
+                });
+
+        // 대표 기사 조회
+        News news = newsRepository.findById(representative.getArticleId())
+                .orElseThrow(() -> new CustomException(GlobalErrorCode.RESOURCE_NOT_FOUND));
+
+        // 대표 기사에 연결된 daily_solo 문제 조회
+        List<Question> todayQuestions = questionRepository.findAllByNewsIdAndGameMode(representative.getArticleId(), GameMode.daily_solo);
+
+        // 대표 기사는 있지만 아직 문제가 생성되지 않은 경우: 에러 대신 기사 정보만 응답
         if (todayQuestions.isEmpty()) {
-            log.warn("[AnswerService] 오늘의 문제가 아직 준비되지 않았습니다: userId={}", userId);
-            throw new CustomException(AnswerErrorCode.TODAY_QUESTIONS_NOT_FOUND);
+            log.warn("[AnswerService] 오늘의 대표 기사는 있지만 문제가 아직 없습니다: userId={}, newsId={}", userId, news.getId());
+            return TodayQuestionsResponse.builder()
+                    .userLevel(user.getLevel())
+                    .article(toArticleResponse(news))
+                    .questionCount(0)
+                    .questions(List.of())
+                    .build();
         }
 
         // 오늘 문제를 이미 다 풀었는지 확인
@@ -80,10 +99,6 @@ public class AnswerService {
             log.warn("[AnswerService] 오늘 문제풀이를 이미 완료했습니다: userId={}", userId);
             throw new CustomException(AnswerErrorCode.TODAY_ALREADY_COMPLETED);
         }
-
-        // 문제가 속한 기사 조회
-        News news = newsRepository.findById(todayQuestions.get(0).getNewsId())
-                .orElseThrow(() -> new CustomException(GlobalErrorCode.RESOURCE_NOT_FOUND));
 
         // 문제 목록 응답 변환 (정답/근거/힌트 제외)
         List<TodayQuestionsResponse.QuestionResponse> questionResponses = new ArrayList<>();
@@ -108,17 +123,22 @@ public class AnswerService {
         // 응답 세팅
         return TodayQuestionsResponse.builder()
                 .userLevel(user.getLevel())
-                .article(TodayQuestionsResponse.ArticleResponse.builder()
-                        .newsId(news.getId())
-                        .title(news.getTitle())
-                        .publisher(news.getPublisher())
-                        .publishedAt(news.getPublishedAt().toLocalDate().toString())
-                        .category(news.getCategory().name())
-                        .content(news.getContent())
-                        .level(news.getLevel())
-                        .build())
+                .article(toArticleResponse(news))
                 .questionCount(questionResponses.size())
                 .questions(questionResponses)
+                .build();
+    }
+
+    // News -> ArticleResponse 변환 (문제가 없어 기사 정보만 응답할 때도 재사용)
+    private TodayQuestionsResponse.ArticleResponse toArticleResponse(News news) {
+        return TodayQuestionsResponse.ArticleResponse.builder()
+                .newsId(news.getId())
+                .title(news.getTitle())
+                .publisher(news.getPublisher())
+                .publishedAt(news.getPublishedAt().toLocalDate().toString())
+                .category(news.getCategory().name())
+                .content(news.getContent())
+                .level(news.getLevel())
                 .build();
     }
 

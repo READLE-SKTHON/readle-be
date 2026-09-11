@@ -21,6 +21,8 @@ public class DailyRepresentativeArticleService {
 
     private static final int MIN_LEVEL = 1;
     private static final int MAX_LEVEL = 5;
+    /** 임시: 아직 문제가 있는 기사로 고정해야 하는 레벨. 추후 모든 레벨에 문제 데이터가 갖춰지면 제거한다. */
+    private static final int FIXED_LEVEL_WITH_QUESTIONS = 4;
 
     private final NewsRepository newsRepository;
     private final DailyRepresentativeArticleRepository dailyRepresentativeArticleRepository;
@@ -38,8 +40,13 @@ public class DailyRepresentativeArticleService {
         List<TodayRepresentativeArticleDto> result = new ArrayList<>();
 
         for (int level = MIN_LEVEL; level <= MAX_LEVEL; level++) {
-            Long articleId = newsRepository.findRandomIdByLevel(level)
-                    .orElseThrow(() -> new CustomException(NewsErrorCode.NO_ARTICLE_FOR_LEVEL));
+            // 임시: 레벨 4는 아직 문제가 있는 기사가 하나뿐이라, 랜덤이 아니라 그 기사로 고정한다.
+            // (다른 레벨은 문제 데이터가 갖춰지기 전까지 기존처럼 랜덤 선택 유지)
+            Long articleId = (level == FIXED_LEVEL_WITH_QUESTIONS)
+                    ? newsRepository.findFirstIdWithQuestionsByLevel(level)
+                            .orElseThrow(() -> new CustomException(NewsErrorCode.NO_ARTICLE_FOR_LEVEL))
+                    : newsRepository.findRandomIdByLevel(level)
+                            .orElseThrow(() -> new CustomException(NewsErrorCode.NO_ARTICLE_FOR_LEVEL));
 
             dailyRepresentativeArticleRepository.upsert(today, level, articleId);
             result.add(new TodayRepresentativeArticleDto(level, articleId));

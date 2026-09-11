@@ -40,4 +40,17 @@ public interface NewsRepository extends JpaRepository<News, Long> {
     @Query(value = "SELECT news_id FROM news_articles WHERE level = :level ORDER BY RANDOM() LIMIT 1",
             nativeQuery = true)
     Optional<Long> findRandomIdByLevel(@Param("level") Integer level);
+
+    /**
+     * 지정한 level의 기사 중 questions 테이블에 실제로 연결된(문제가 있는) 기사를 news_id 오름차순으로
+     * 조회해 그 중 첫 번째 것을 반환한다. (임시: 오늘의 대표 기사를 "문제 있는 기사"로 고정하기 위한 용도)
+     */
+    @Query(value = """
+            SELECT n.news_id FROM news_articles n
+            WHERE n.level = :level
+              AND EXISTS (SELECT 1 FROM questions q WHERE q.news_id = n.news_id)
+            ORDER BY n.news_id ASC
+            LIMIT 1
+            """, nativeQuery = true)
+    Optional<Long> findFirstIdWithQuestionsByLevel(@Param("level") Integer level);
 }
