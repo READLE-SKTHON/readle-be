@@ -1,5 +1,6 @@
 package com.readle.readlebackend.domain.news.entity;
 
+import com.readle.readlebackend.domain.news.enums.NewsCategory;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -10,14 +11,15 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.ColumnTransformer;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
 /**
  * {@code news_articles} 테이블 매핑 엔티티. 스키마는 Flyway {@code V1__init.sql} 기준.
- *
- * <p>난이도(level) 컬럼은 존재하지 않으므로 매핑하지 않는다.
  *
  * <p>{@code created_at} / {@code updated_at} 은 DB 기본값(now())에 맡기므로
  * insert/update 대상에서 제외한다.
@@ -36,8 +38,9 @@ public class News {
     @Column(nullable = false, length = 100)
     private String title;
 
-    @ColumnTransformer(write = "?::news_category_type")
-    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(nullable = false, columnDefinition = "news_category_type")
     private NewsCategory category;
 
     @Column(nullable = false, length = 100)
@@ -58,14 +61,18 @@ public class News {
     @Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
     private LocalDateTime updatedAt;
 
+    @Column(nullable = false)
+    private Integer level;
+
     @Builder
     private News(String title, NewsCategory category, String publisher,
-                  LocalDateTime publishedAt, String content, String sourceUrl) {
+                  LocalDateTime publishedAt, String content, String sourceUrl, Integer level) {
         this.title = title;
         this.category = category;
         this.publisher = publisher;
         this.publishedAt = publishedAt;
         this.content = content;
         this.sourceUrl = sourceUrl;
+        this.level = level;
     }
 }

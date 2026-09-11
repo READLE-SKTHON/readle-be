@@ -1,9 +1,5 @@
 package com.readle.readlebackend.domain.question.dto;
 
-import com.readle.readlebackend.domain.question.entity.MainCategory;
-import com.readle.readlebackend.domain.question.entity.QuestionFormat;
-import com.readle.readlebackend.domain.question.entity.SubCategory;
-
 import java.util.List;
 
 /**

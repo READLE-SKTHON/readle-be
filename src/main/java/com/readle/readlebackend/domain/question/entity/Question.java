@@ -1,5 +1,9 @@
 package com.readle.readlebackend.domain.question.entity;
 
+import com.readle.readlebackend.domain.question.enums.GameMode;
+import com.readle.readlebackend.domain.question.enums.MainCategory;
+import com.readle.readlebackend.domain.question.enums.QuestionFormat;
+import com.readle.readlebackend.domain.question.enums.SubCategory;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -10,7 +14,8 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.ColumnTransformer;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -42,8 +47,9 @@ public class Question {
     @Column(nullable = false)
     private String content;
 
-    @ColumnTransformer(write = "?::question_format_type")
-    @Column(name = "question_format", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "question_format", nullable = false, columnDefinition = "question_format_type")
     private QuestionFormat questionFormat;
 
     @JdbcTypeCode(SqlTypes.JSON)
@@ -59,25 +65,31 @@ public class Question {
     @Column
     private String hint;
 
-    @ColumnTransformer(write = "?::game_mode_type")
-    @Column(name = "game_mode", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "game_mode", nullable = false, columnDefinition = "game_mode_type")
     private GameMode gameMode;
 
-    @ColumnTransformer(write = "?::main_category_type")
-    @Column(name = "main_category", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "main_category", nullable = false, columnDefinition = "main_category_type")
     private MainCategory mainCategory;
 
-    @ColumnTransformer(write = "?::sub_category_type")
-    @Column(name = "sub_category")
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "sub_category", columnDefinition = "sub_category_type")
     private SubCategory subCategory;
 
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(nullable = false)
+    private Integer level;
+
     @Builder
     private Question(Long newsId, String content, QuestionFormat questionFormat, String choices,
                       String answer, String explanation, String hint, GameMode gameMode,
-                      MainCategory mainCategory, SubCategory subCategory) {
+                      MainCategory mainCategory, SubCategory subCategory, Integer level) {
         this.newsId = newsId;
         this.content = content;
         this.questionFormat = questionFormat;
@@ -88,5 +100,6 @@ public class Question {
         this.gameMode = gameMode;
         this.mainCategory = mainCategory;
         this.subCategory = subCategory;
+        this.level = level;
     }
 }

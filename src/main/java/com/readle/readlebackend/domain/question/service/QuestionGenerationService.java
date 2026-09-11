@@ -7,9 +7,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.readle.readlebackend.domain.question.client.GeminiClient;
 import com.readle.readlebackend.domain.question.dto.QuestionGenerationRequest;
 import com.readle.readlebackend.domain.question.dto.QuestionGenerationResult;
-import com.readle.readlebackend.domain.question.entity.MainCategory;
-import com.readle.readlebackend.domain.question.entity.QuestionFormat;
-import com.readle.readlebackend.domain.question.entity.SubCategory;
 import com.readle.readlebackend.domain.question.exception.QuestionErrorCode;
 import com.readle.readlebackend.global.exception.CustomException;
 import lombok.RequiredArgsConstructor;
@@ -177,14 +174,14 @@ public class QuestionGenerationService {
     }
 
     private List<String> enumValues(MainCategory[] values) {
-        return Arrays.stream(values).map(MainCategory::getValue).collect(Collectors.toList());
+        return Arrays.stream(values).map(MainCategory::name).collect(Collectors.toList());
     }
 
     private List<String> enumValues(SubCategory[] values) {
-        return Arrays.stream(values).map(SubCategory::getValue).collect(Collectors.toList());
+        return Arrays.stream(values).map(SubCategory::name).collect(Collectors.toList());
     }
 
     private List<String> enumValues(QuestionFormat[] values) {
-        return Arrays.stream(values).map(QuestionFormat::getValue).collect(Collectors.toList());
+        return Arrays.stream(values).map(QuestionFormat::name).collect(Collectors.toList());
     }
 }
