@@ -1,6 +1,6 @@
 package com.readle.readlebackend.domain.room.service;
 
-import com.readle.readlebackend.domain.game.dto.request.SubmitAnswerRequest;
+import com.readle.readlebackend.domain.game.dto.request.GameSubmitAnswerRequest;
 import com.readle.readlebackend.domain.game.dto.response.StartGameResponse;
 import com.readle.readlebackend.domain.game.entity.GameRoomAnswer;
 import com.readle.readlebackend.domain.game.entity.GameRoomQuestion;
@@ -218,7 +218,7 @@ class RoomServiceConcurrencyTest {
                 try {
                     startLatch.await();
                     roomService.submitAnswer(submitterId, room.getId(), 0,
-                            SubmitAnswerRequest.builder().selectedAnswer("O").build());
+                            GameSubmitAnswerRequest.builder().selectedAnswer("O").build());
                     outcomes.add("SUCCESS");
                 } catch (CustomException e) {
                     outcomes.add(e.getErrorCode().getCode());

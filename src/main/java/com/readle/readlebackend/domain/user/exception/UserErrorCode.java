@@ -9,7 +9,8 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public enum UserErrorCode implements BaseErrorCode {
 
-    NO_SCHOOL_ASSIGNED("U001", "소속된 학교가 없습니다.", HttpStatus.BAD_REQUEST);
+    NO_SCHOOL_ASSIGNED("U001", "소속된 학교가 없습니다.", HttpStatus.BAD_REQUEST),
+    USER_NOT_FOUND("U002", "존재하지 않는 유저입니다.", HttpStatus.NOT_FOUND);
 
     private final String code;
     private final String message;
