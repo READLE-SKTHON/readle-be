@@ -5,6 +5,5 @@ package com.readle.readlebackend.domain.question.enums;
  */
 public enum GameMode {
     daily_solo,
-    room,
-    category_practice
+    room
 }
