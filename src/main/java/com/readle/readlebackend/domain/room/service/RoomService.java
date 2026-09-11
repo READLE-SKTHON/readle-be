@@ -21,6 +21,9 @@ import java.util.concurrent.ThreadLocalRandom;
 @Transactional(readOnly = true)
 public class RoomService {
 
+    // TODO: 실제 초대 링크 생성 로직 없음. 프론트 라우트 정해지면 교체.
+    private static final String DUMMY_INVITE_LINK = "https://dummy-invite-link.com";
+
     private final GameRoomRepository gameRoomRepository;
     private final RoomParticipantRepository roomParticipantRepository;
 
@@ -33,6 +36,7 @@ public class RoomService {
 
         GameRoom room = GameRoom.builder()
                 .roomCode(roomCode)
+                .inviteLink(DUMMY_INVITE_LINK)
                 .category(category)
                 .difficulty(difficulty)
                 .timer(request.getTimer())
