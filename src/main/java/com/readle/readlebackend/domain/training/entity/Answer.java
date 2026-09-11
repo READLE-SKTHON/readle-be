@@ -6,6 +6,7 @@ import com.readle.readlebackend.domain.user.entity.User;
 import com.readle.readlebackend.global.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -47,4 +48,16 @@ public class Answer extends BaseTimeEntity {
 
     @Column(nullable = false)
     private String feedback; // 피드백
+
+    @Builder
+    private Answer(User user, Question question, String selectedAnswer, ResultStatus resultStatus, String justification, Integer overallScore, String mistakeFeedback, String feedback) {
+        this.user = user;
+        this.question = question;
+        this.selectedAnswer = selectedAnswer;
+        this.resultStatus = resultStatus;
+        this.justification = justification;
+        this.overallScore = overallScore;
+        this.mistakeFeedback = mistakeFeedback;
+        this.feedback = feedback;
+    }
 }
