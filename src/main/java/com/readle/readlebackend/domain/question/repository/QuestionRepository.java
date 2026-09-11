@@ -18,4 +18,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     /** 특정 뉴스 카테고리(News.newsId 목록)로 제한해서 후보를 뽑을 때 사용. */
     List<Question> findAllByNewsIdInAndGameModeAndLevelIn(
             List<Long> newsIds, GameMode gameMode, List<Integer> levels);
+
+    // 오늘의 문제(daily_solo) 조회용 (특정 게임 모드 + 특정 레벨 + 오늘 생성된 것)
+    List<Question> findAllByGameModeAndLevelInAndCreatedAtBetween(GameMode gameMode, List<Integer> levels, LocalDateTime start, LocalDateTime end);
 }

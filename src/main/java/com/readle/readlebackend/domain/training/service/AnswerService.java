@@ -51,7 +51,7 @@ public class AnswerService {
                 .orElseThrow(() -> new CustomException(AuthErrorCode.INVALID_USER_ID));
 
         // 오늘 생성된 daily_solo 문제 조회
-        List<Question> todayQuestions = findTodayQuestions();
+        List<Question> todayQuestions = findTodayQuestions(user.getLevel());
 
         // 오늘의 문제가 존재하는지 확인
         if (todayQuestions.isEmpty()) {
@@ -111,11 +111,11 @@ public class AnswerService {
                 .build();
     }
 
-    // 오늘(00:00~24:00) 생성된 daily_solo 문제 조회
-    private List<Question> findTodayQuestions() {
+    // 오늘(00:00~24:00) 생성된, 특정 유저 레벨에 맞는 daily_solo 문제 조회
+    private List<Question> findTodayQuestions(Long userLevel) {
         LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
         LocalDateTime endOfDay = startOfDay.plusDays(1);
-        return questionRepository.findByGameModeAndCreatedAtBetween(GameMode.daily_solo, startOfDay, endOfDay);
+        return questionRepository.findAllByGameModeAndLevelInAndCreatedAtBetween(GameMode.daily_solo, List.of(userLevel.intValue()), startOfDay, endOfDay);
     }
 
     // Question.choices(JSON 문자열)를 List<String>으로 파싱
@@ -228,7 +228,7 @@ public class AnswerService {
                 .orElseThrow(() -> new CustomException(AuthErrorCode.INVALID_USER_ID));
 
         // 오늘 생성된 daily_solo 문제 조회
-        List<Question> todayQuestions = findTodayQuestions();
+        List<Question> todayQuestions = findTodayQuestions(user.getLevel());
         if (todayQuestions.isEmpty()) {
             log.warn("[AnswerService] 오늘의 문제가 아직 준비되지 않았습니다: userId={}", userId);
             throw new CustomException(AnswerErrorCode.TODAY_QUESTIONS_NOT_FOUND);
