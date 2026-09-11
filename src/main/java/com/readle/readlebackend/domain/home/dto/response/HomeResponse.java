@@ -62,6 +62,9 @@ public class HomeResponse {
         @Schema(description = "게시 시각")
         private LocalDateTime publishedAt;
 
+        @Schema(description = "기사 본문", example = "정부가 오늘 발표한 정책에 따르면...")
+        private String content;
+
         @Schema(description = "난이도 레벨", example = "3")
         private Integer level;
     }

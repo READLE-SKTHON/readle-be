@@ -49,9 +49,19 @@ public class GeminiClient {
     /**
      * 프롬프트와 응답 JSON 스키마를 보내고, 스키마에 맞는 원본 JSON 문자열을 그대로 반환한다.
      * 파싱은 호출부(Service)에서 담당한다.
+     * thinking을 끄지 않는 기본 동작(모델 기본값)을 사용한다.
      */
     public String generateJson(String prompt, JsonNode responseSchema) {
-        String requestBody = buildRequestBody(prompt, responseSchema);
+        return generateJson(prompt, responseSchema, null);
+    }
+
+    /**
+     * thinkingBudget을 지정해서 호출하는 버전.
+     * 0을 넘기면 thinking을 완전히 끄고(gemini-2.5-flash 등 flash 계열에서만 지원), 응답 속도를 높인다.
+     * null을 넘기면 thinkingConfig를 아예 설정하지 않아 모델 기본 동작(thinking 켜짐)을 그대로 따른다.
+     */
+    public String generateJson(String prompt, JsonNode responseSchema, Integer thinkingBudget) {
+        String requestBody = buildRequestBody(prompt, responseSchema, thinkingBudget);
         String url = ENDPOINT_TEMPLATE.formatted(model, apiKey);
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -80,7 +90,7 @@ public class GeminiClient {
         return extractText(response.body());
     }
 
-    private String buildRequestBody(String prompt, JsonNode responseSchema) {
+    private String buildRequestBody(String prompt, JsonNode responseSchema, Integer thinkingBudget) {
         ObjectNode root = objectMapper.createObjectNode();
 
         ArrayNode contents = root.putArray("contents");
@@ -91,6 +101,12 @@ public class GeminiClient {
         ObjectNode generationConfig = root.putObject("generationConfig");
         generationConfig.put("responseMimeType", "application/json");
         generationConfig.set("responseSchema", responseSchema);
+
+        // thinkingBudget이 지정된 경우에만 thinkingConfig를 추가한다 (null이면 모델 기본 동작 유지)
+        if (thinkingBudget != null) {
+            ObjectNode thinkingConfig = generationConfig.putObject("thinkingConfig");
+            thinkingConfig.put("thinkingBudget", thinkingBudget);
+        }
 
         try {
             return objectMapper.writeValueAsString(root);
