@@ -75,4 +75,12 @@ public class News {
         this.sourceUrl = sourceUrl;
         this.level = level;
     }
+
+    /**
+     * 문제 생성 AI가 판단한 난이도로 기사 자체의 level을 갱신한다.
+     * (목데이터로 미리 넣어둔 level은 임시값이므로, 문제 생성 시점에 AI 판단값으로 덮어쓴다.)
+     */
+    public void updateLevel(Integer level) {
+        this.level = level;
+    }
 }

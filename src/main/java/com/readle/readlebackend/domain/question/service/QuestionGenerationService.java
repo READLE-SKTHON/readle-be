@@ -4,9 +4,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.readle.readlebackend.domain.news.entity.News;
+import com.readle.readlebackend.domain.news.repository.NewsRepository;
 import com.readle.readlebackend.domain.question.client.GeminiClient;
 import com.readle.readlebackend.domain.question.dto.GeneratedQuestionDto;
-import com.readle.readlebackend.domain.question.dto.QuestionGenerationRequest;
 import com.readle.readlebackend.domain.question.dto.QuestionGenerationResult;
 import com.readle.readlebackend.domain.question.entity.Question;
 import com.readle.readlebackend.domain.question.enums.GameMode;
@@ -18,6 +19,7 @@ import com.readle.readlebackend.domain.question.repository.QuestionRepository;
 import com.readle.readlebackend.global.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,8 +30,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 기사 1건을 받아 (1) 난이도 1~5 판단, (2) 오늘의 학습 문제 10개, (3) 게임용 문제 10개를
- * 한 번의 Gemini 호출로 생성하고, 생성된 문제들을 questions 테이블에 저장한다.
+ * 아직 문제가 생성되지 않은 기사를 하나 가져와서 (1) 난이도 1~5 판단, (2) 오늘의 학습 문제 10개,
+ * (3) 게임용 문제 10개를 한 번의 Gemini 호출로 생성하고, 생성된 문제들을 questions 테이블에 저장한다.
+ *
+ * <p>이미 questions.news_id로 참조된 적 있는 기사는 다시 문제를 만들지 않는다
+ * ({@link NewsRepository#findArticlesWithoutQuestions}).
  */
 @Slf4j
 @Service
@@ -39,19 +44,19 @@ public class QuestionGenerationService {
     /** 대분류(main_category) 하나당 각 문제 세트(오늘의 학습/게임)에서 생성할 개수. 5개 카테고리 x 2개 = 세트당 10개. */
     private static final int QUESTIONS_PER_CATEGORY = 2;
 
-    /**
-     * TODO: 임시 값. 아직 News 저장 로직(Repository)이 없어서, 실제 기사가 존재한다고 가정하고
-     * 고정된 news_id로 문제를 저장한다. News 저장 기능이 생기면 실제 news_id로 교체해야 한다.
-     */
-    private static final Long TEMP_NEWS_ID = 1L;
-
     private final GeminiClient geminiClient;
     private final ObjectMapper objectMapper;
     private final QuestionRepository questionRepository;
+    private final NewsRepository newsRepository;
 
     @Transactional
-    public QuestionGenerationResult generate(QuestionGenerationRequest request) {
-        String prompt = buildMakeQuestionPrompt(request);
+    public QuestionGenerationResult generate() {
+        News news = newsRepository.findArticlesWithoutQuestions(PageRequest.of(0, 1))
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new CustomException(QuestionErrorCode.NO_ARTICLE_TO_GENERATE));
+
+        String prompt = buildMakeQuestionPrompt(news.getTitle(), news.getContent());
         JsonNode schema = buildResponseSchema();
 
         String rawJson = geminiClient.generateJson(prompt, schema);
@@ -64,27 +69,35 @@ public class QuestionGenerationService {
             throw new CustomException(QuestionErrorCode.GEMINI_RESPONSE_PARSE_ERROR);
         }
 
-        saveQuestions(result);
+        news.updateLevel(result.level());
+        newsRepository.save(news);
+
+        saveQuestions(result, news.getId());
+
+        long completedCount = questionRepository.countDistinctNewsId();
+        long totalCount = newsRepository.count();
+        log.info("[QuestionGenerationService] 기사 처리 완료: news_id={}, title=\"{}\", level={} | 진행 상황 {}/{}개 기사 완료",
+                news.getId(), news.getTitle(), result.level(), completedCount, totalCount);
 
         return result;
     }
 
     /** 생성된 dailyQuestions/gameQuestions를 Question 엔티티로 변환해서 저장한다. */
-    private void saveQuestions(QuestionGenerationResult result) {
+    private void saveQuestions(QuestionGenerationResult result, Long newsId) {
         List<Question> questions = new ArrayList<>();
 
         for (GeneratedQuestionDto dto : result.dailyQuestions()) {
-            questions.add(toQuestionEntity(dto, GameMode.daily_solo, result.level()));
+            questions.add(toQuestionEntity(dto, GameMode.daily_solo, result.level(), newsId));
         }
         for (GeneratedQuestionDto dto : result.gameQuestions()) {
-            questions.add(toQuestionEntity(dto, GameMode.category_practice, result.level()));
+            questions.add(toQuestionEntity(dto, GameMode.room, result.level(), newsId));
         }
 
         questionRepository.saveAll(questions);
-        log.info("문제 {}개 저장 완료 (news_id={})", questions.size(), TEMP_NEWS_ID);
+        log.info("문제 {}개 저장 완료 (news_id={})", questions.size(), newsId);
     }
 
-    private Question toQuestionEntity(GeneratedQuestionDto dto, GameMode gameMode, Integer level) {
+    private Question toQuestionEntity(GeneratedQuestionDto dto, GameMode gameMode, Integer level, Long newsId) {
         String choicesJson;
         try {
             choicesJson = objectMapper.writeValueAsString(dto.choices());
@@ -94,7 +107,7 @@ public class QuestionGenerationService {
         }
 
         return Question.builder()
-                .newsId(TEMP_NEWS_ID)
+                .newsId(newsId)
                 .content(dto.content())
                 .questionFormat(dto.questionFormat())
                 .choices(choicesJson)
@@ -108,15 +121,15 @@ public class QuestionGenerationService {
                 .build();
     }
 
-    private String buildMakeQuestionPrompt(QuestionGenerationRequest request) {
+    private String buildMakeQuestionPrompt(String articleTitle, String articleContent) {
         int totalPerSet = QUESTIONS_PER_CATEGORY * MainCategory.values().length;
 
         StringBuilder sb = new StringBuilder();
         sb.append("너는 한국 대학생 문해력 학습 앱 'Readle'의 문제 출제자야. ");
         sb.append("아래 뉴스 기사를 분석해서 난이도를 판단하고, 두 종류의 문제 세트를 만들어줘.\n\n");
 
-        sb.append("[기사 제목]\n").append(request.articleTitle()).append("\n\n");
-        sb.append("[기사 본문]\n").append(request.articleContent()).append("\n\n");
+        sb.append("[기사 제목]\n").append(articleTitle).append("\n\n");
+        sb.append("[기사 본문]\n").append(articleContent).append("\n\n");
 
         sb.append("[1단계: 난이도 판단]\n");
         sb.append("어휘 난이도, 문장 길이와 복잡도, 필요한 배경지식 수준을 고려해서 이 기사를 1~5 사이의 정수로 판단해라 ")
@@ -264,4 +277,7 @@ public class QuestionGenerationService {
     private List<String> enumValues(QuestionFormat[] values) {
         return Arrays.stream(values).map(QuestionFormat::name).collect(Collectors.toList());
     }
+
+
+
 }
