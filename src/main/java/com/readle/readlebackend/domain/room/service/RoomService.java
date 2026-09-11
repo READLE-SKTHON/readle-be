@@ -2,7 +2,7 @@ package com.readle.readlebackend.domain.room.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.readle.readlebackend.domain.game.dto.request.SubmitAnswerRequest;
+import com.readle.readlebackend.domain.game.dto.request.GameSubmitAnswerRequest;
 import com.readle.readlebackend.domain.game.dto.response.AnswerStatusResponse;
 import com.readle.readlebackend.domain.game.dto.response.GameQuestionResponse;
 import com.readle.readlebackend.domain.game.dto.response.GameStatusResponse;
@@ -271,7 +271,7 @@ public class RoomService {
      * 채점 결과(정답 여부/점수)는 응답에 포함하지 않는다 — 타이머 종료 후 {@link #getStatus} 로만 공개한다.
      */
     @Transactional
-    public SubmitAnswerResponse submitAnswer(Long userId, Long roomId, Integer order, SubmitAnswerRequest request) {
+    public SubmitAnswerResponse submitAnswer(Long userId, Long roomId, Integer order, GameSubmitAnswerRequest request) {
         GameRoom room = gameRoomRepository.findById(roomId)
                 .orElseThrow(() -> new CustomException(RoomErrorCode.ROOM_NOT_FOUND));
 
@@ -453,7 +453,7 @@ public class RoomService {
 
     private boolean isCorrectMultipleChoiceIndex(Question question, String selectedAnswer) {
         List<String> choices = parseChoices(question.getChoices());
-        int correctIndex = choices.indexOf(question.getAnswer());
+        int correctIndex = findChoiceIndex(choices, question.getAnswer());
         if (correctIndex < 0) {
             log.warn("문제 {} 의 answer가 choices 목록 안에 없습니다. answer={}, choices={}",
                     question.getId(), question.getAnswer(), choices);
@@ -466,6 +466,27 @@ public class RoomService {
         } catch (NumberFormatException e) {
             return false;
         }
+    }
+
+    /**
+     * choices 안에서 answer와 같은 항목의 인덱스를 찾는다. AI가 생성한 answer/choices는
+     * 의미상 같아도 공백·대소문자가 미묘하게 다를 수 있어 정규화 후 비교한다.
+     */
+    private int findChoiceIndex(List<String> choices, String answer) {
+        String normalizedAnswer = normalizeChoiceText(answer);
+        for (int i = 0; i < choices.size(); i++) {
+            if (normalizeChoiceText(choices.get(i)).equals(normalizedAnswer)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private String normalizeChoiceText(String text) {
+        if (text == null) {
+            return "";
+        }
+        return text.trim().replaceAll("\\s+", " ").toLowerCase();
     }
 
     private int scoreForRank(int rank) {
@@ -618,6 +639,8 @@ public class RoomService {
                 .questionFormat(question.getQuestionFormat())
                 .content(question.getContent())
                 .choices(parseChoices(question.getChoices()))
+                .mainCategory(question.getMainCategory())
+                .subCategory(question.getSubCategory())
                 .build();
     }
 
