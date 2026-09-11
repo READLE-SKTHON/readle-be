@@ -6,8 +6,9 @@ import com.readle.readlebackend.domain.game.dto.request.SubmitAnswerRequest;
 import com.readle.readlebackend.domain.game.dto.response.AnswerStatusResponse;
 import com.readle.readlebackend.domain.game.dto.response.GameQuestionResponse;
 import com.readle.readlebackend.domain.game.dto.response.GameStatusResponse;
-import com.readle.readlebackend.domain.game.dto.response.LeaderboardEntryResponse;
+import com.readle.readlebackend.domain.game.dto.response.ScoreboardEntryResponse;
 import com.readle.readlebackend.domain.game.dto.response.MyResultResponse;
+import com.readle.readlebackend.domain.game.dto.response.PlayerQuestionResultResponse;
 import com.readle.readlebackend.domain.game.dto.response.StartGameResponse;
 import com.readle.readlebackend.domain.game.dto.response.SubmitAnswerResponse;
 import com.readle.readlebackend.domain.game.entity.GameRoomAnswer;
@@ -196,11 +197,17 @@ public class RoomService {
             throw new CustomException(RoomErrorCode.NOT_ROOM_HOST);
         }
 
-        if (room.isStarted()) {
+        // 이전 판이 아직 진행 중이면(FINISHED 전) 재시작 불가. 한 번도 시작 안 한 방은 당연히 통과.
+        if (isRoundInProgress(room)) {
             throw new CustomException(RoomErrorCode.ROOM_ALREADY_STARTED);
         }
 
-        List<Question> pool = findEligibleQuestions(room.getCategory(), room.getDifficulty());
+        // 이 방에서 이전 판까지 이미 나온 문제는 재사용하지 않는다.
+        Set<Long> usedQuestionIds = gameRoomQuestionRepository.findAllByRoomId(roomId).stream()
+                .map(GameRoomQuestion::getQuestionId)
+                .collect(Collectors.toSet());
+
+        List<Question> pool = findEligibleQuestions(room.getCategory(), room.getDifficulty(), usedQuestionIds);
         if (pool.size() < room.getQuestionCount()) {
             throw new CustomException(RoomErrorCode.INSUFFICIENT_QUESTIONS);
         }
@@ -209,18 +216,20 @@ public class RoomService {
         Collections.shuffle(shuffled);
         List<Question> selected = shuffled.subList(0, room.getQuestionCount());
 
+        room.start();
+        gameRoomRepository.save(room);
+        int round = room.getCurrentRound();
+
         List<GameRoomQuestion> assignments = new ArrayList<>();
         for (int order = 0; order < selected.size(); order++) {
             assignments.add(GameRoomQuestion.builder()
                     .roomId(roomId)
+                    .round(round)
                     .questionId(selected.get(order).getId())
                     .displayOrder(order)
                     .build());
         }
         gameRoomQuestionRepository.saveAll(assignments);
-
-        room.start();
-        gameRoomRepository.save(room);
 
         List<GameQuestionResponse> questionResponses = new ArrayList<>();
         for (int order = 0; order < selected.size(); order++) {
@@ -229,6 +238,7 @@ public class RoomService {
 
         return StartGameResponse.builder()
                 .roomId(room.getId())
+                .round(round)
                 .startedAt(room.getStartedAt())
                 .questions(questionResponses)
                 .build();
@@ -251,7 +261,7 @@ public class RoomService {
         }
 
         GameRoomQuestion assignment = gameRoomQuestionRepository
-                .findByRoomIdAndDisplayOrder(roomId, order)
+                .findByRoomIdAndRoundAndDisplayOrder(roomId, room.getCurrentRound(), order)
                 .orElseThrow(() -> new CustomException(RoomErrorCode.QUESTION_ORDER_OUT_OF_RANGE));
 
         Question question = questionRepository.findById(assignment.getQuestionId())
@@ -282,13 +292,16 @@ public class RoomService {
             throw new CustomException(RoomErrorCode.ANSWER_WINDOW_CLOSED);
         }
 
-        // 동시 제출 방지: 이 방/문제 배정 행을 잠가서 "정답 개수 세기 → 등수 결정 → 저장"이
+        int round = room.getCurrentRound();
+
+        // 동시 제출 방지: 이 방/판/문제 배정 행을 잠가서 "정답 개수 세기 → 등수 결정 → 저장"이
         // 원자적으로 이뤄지게 한다. 같은 문제에 대한 다른 유저의 동시 제출은 여기서 대기한다.
         GameRoomQuestion assignment = gameRoomQuestionRepository
-                .findByRoomIdAndDisplayOrderForUpdate(roomId, order)
+                .findByRoomIdAndRoundAndDisplayOrderForUpdate(roomId, round, order)
                 .orElseThrow(() -> new CustomException(RoomErrorCode.QUESTION_ORDER_OUT_OF_RANGE));
 
-        if (gameRoomAnswerRepository.existsByRoomIdAndQuestionIdAndUserId(roomId, assignment.getQuestionId(), userId)) {
+        if (gameRoomAnswerRepository.existsByRoomIdAndRoundAndQuestionIdAndUserId(
+                roomId, round, assignment.getQuestionId(), userId)) {
             throw new CustomException(RoomErrorCode.ALREADY_ANSWERED);
         }
 
@@ -299,7 +312,7 @@ public class RoomService {
         int score = 0;
         if (isCorrect) {
             long correctSoFar = gameRoomAnswerRepository
-                    .findAllByRoomIdAndQuestionId(roomId, assignment.getQuestionId()).stream()
+                    .findAllByRoomIdAndRoundAndQuestionId(roomId, round, assignment.getQuestionId()).stream()
                     .filter(GameRoomAnswer::getIsCorrect)
                     .count();
             score = scoreForRank((int) correctSoFar + 1);
@@ -307,6 +320,7 @@ public class RoomService {
 
         GameRoomAnswer answer = GameRoomAnswer.builder()
                 .roomId(roomId)
+                .round(round)
                 .questionId(assignment.getQuestionId())
                 .userId(userId)
                 .selectedAnswer(request.getSelectedAnswer())
@@ -344,37 +358,43 @@ public class RoomService {
             throw new CustomException(RoomErrorCode.ROOM_NOT_STARTED);
         }
 
+        int round = room.getCurrentRound();
         GameProgress progress = calculateProgress(room);
 
         if (progress.phase() == GamePhase.FINISHED) {
             return GameStatusResponse.builder()
                     .phase(GamePhase.FINISHED)
+                    .round(round)
                     .currentQuestionOrder(room.getQuestionCount() - 1)
+                    .currentQuestionNumber(room.getQuestionCount())
                     .remainingSeconds(0)
                     .totalQuestions(room.getQuestionCount())
-                    .leaderboard(buildLeaderboard(roomId))
+                    .scoreboard(buildScoreboard(roomId, round))
                     .build();
         }
 
         GameRoomQuestion assignment = gameRoomQuestionRepository
-                .findByRoomIdAndDisplayOrder(roomId, progress.questionOrder())
+                .findByRoomIdAndRoundAndDisplayOrder(roomId, round, progress.questionOrder())
                 .orElseThrow(() -> new CustomException(RoomErrorCode.QUESTION_ORDER_OUT_OF_RANGE));
         Question question = questionRepository.findById(assignment.getQuestionId())
                 .orElseThrow(() -> new CustomException(RoomErrorCode.QUESTION_ORDER_OUT_OF_RANGE));
 
         GameStatusResponse.GameStatusResponseBuilder builder = GameStatusResponse.builder()
                 .phase(progress.phase())
+                .round(round)
                 .currentQuestionOrder(progress.questionOrder())
+                .currentQuestionNumber(progress.questionOrder() + 1)
                 .remainingSeconds(progress.remainingSeconds())
                 .totalQuestions(room.getQuestionCount());
 
         switch (progress.phase()) {
             case ANSWERING -> builder
                     .question(toGameQuestionResponse(question, progress.questionOrder()))
-                    .answerStatus(buildAnswerStatus(roomId, assignment.getQuestionId()));
+                    .answerStatus(buildAnswerStatus(roomId, round, assignment.getQuestionId()));
             case REVEAL -> builder
-                    .myResult(buildMyResult(roomId, assignment.getQuestionId(), userId, question));
-            case LEADERBOARD -> builder.leaderboard(buildLeaderboard(roomId));
+                    .myResult(buildMyResult(roomId, round, assignment.getQuestionId(), userId, question))
+                    .allResults(buildAllResults(roomId, round, assignment.getQuestionId()));
+            case LEADERBOARD -> builder.scoreboard(buildScoreboard(roomId, round));
             default -> throw new IllegalStateException("예상치 못한 페이즈: " + progress.phase());
         }
 
@@ -407,6 +427,14 @@ public class RoomService {
     }
 
     private record GameProgress(GamePhase phase, int questionOrder, int remainingSeconds) {
+    }
+
+    /** 이전 판이 아직 진행 중인지 (FINISHED 에 도달하지 않았는지). 한 번도 시작 안 했으면 false. */
+    private boolean isRoundInProgress(GameRoom room) {
+        if (!room.isStarted()) {
+            return false;
+        }
+        return calculateProgress(room).phase() != GamePhase.FINISHED;
     }
 
     /**
@@ -452,9 +480,10 @@ public class RoomService {
     }
 
     /** 참여자별로 이 문제에 답을 제출했는지 여부. 정답 여부는 포함하지 않는다 (부정행위 방지). */
-    private List<AnswerStatusResponse> buildAnswerStatus(Long roomId, Long questionId) {
+    private List<AnswerStatusResponse> buildAnswerStatus(Long roomId, Integer round, Long questionId) {
         List<RoomParticipant> participants = roomParticipantRepository.findAllByRoomIdOrderByJoinedAtAsc(roomId);
-        Set<Long> answeredUserIds = gameRoomAnswerRepository.findAllByRoomIdAndQuestionId(roomId, questionId).stream()
+        Set<Long> answeredUserIds = gameRoomAnswerRepository
+                .findAllByRoomIdAndRoundAndQuestionId(roomId, round, questionId).stream()
                 .map(GameRoomAnswer::getUserId)
                 .collect(Collectors.toSet());
 
@@ -470,43 +499,66 @@ public class RoomService {
     }
 
     /** 내가 이번 문제에서 정답을 맞혔는지/점수/정답을 반환한다. 미제출이면 오답 처리. */
-    private MyResultResponse buildMyResult(Long roomId, Long questionId, Long userId, Question question) {
+    private MyResultResponse buildMyResult(Long roomId, Integer round, Long questionId, Long userId, Question question) {
         GameRoomAnswer myAnswer = gameRoomAnswerRepository
-                .findByRoomIdAndQuestionIdAndUserId(roomId, questionId, userId)
+                .findByRoomIdAndRoundAndQuestionIdAndUserId(roomId, round, questionId, userId)
                 .orElse(null);
 
         return MyResultResponse.builder()
                 .isCorrect(myAnswer != null && Boolean.TRUE.equals(myAnswer.getIsCorrect()))
                 .score(myAnswer != null ? myAnswer.getScore() : 0)
                 .correctAnswer(question.getAnswer())
+                .explanation(question.getExplanation())
                 .build();
     }
 
-    /** 방 참여자 전원의 누적 점수 순위표. 아직 한 문제도 안 맞힌 참여자는 0점으로 포함된다. */
-    private List<LeaderboardEntryResponse> buildLeaderboard(Long roomId) {
+    /** 참여자 전원의 이번 문제 결과(정답 여부/점수). 미제출자는 오답/0점으로 포함된다. */
+    private List<PlayerQuestionResultResponse> buildAllResults(Long roomId, Integer round, Long questionId) {
         List<RoomParticipant> participants = roomParticipantRepository.findAllByRoomIdOrderByJoinedAtAsc(roomId);
         Map<Long, String> nicknameByUserId = nicknamesFor(participants);
 
-        Map<Long, Integer> totalScoreByUserId = gameRoomAnswerRepository.findAllByRoomId(roomId).stream()
+        Map<Long, GameRoomAnswer> answerByUserId = gameRoomAnswerRepository
+                .findAllByRoomIdAndRoundAndQuestionId(roomId, round, questionId).stream()
+                .collect(Collectors.toMap(GameRoomAnswer::getUserId, a -> a));
+
+        return participants.stream()
+                .map(p -> {
+                    GameRoomAnswer answer = answerByUserId.get(p.getUserId());
+                    return PlayerQuestionResultResponse.builder()
+                            .userId(p.getUserId())
+                            .nickname(nicknameByUserId.get(p.getUserId()))
+                            .isCorrect(answer != null && Boolean.TRUE.equals(answer.getIsCorrect()))
+                            .score(answer != null ? answer.getScore() : 0)
+                            .build();
+                })
+                .toList();
+    }
+
+    /** 방 참여자 전원의 이번 판 누적 점수 순위표. 아직 한 문제도 안 맞힌 참여자는 0점으로 포함된다. */
+    private List<ScoreboardEntryResponse> buildScoreboard(Long roomId, Integer round) {
+        List<RoomParticipant> participants = roomParticipantRepository.findAllByRoomIdOrderByJoinedAtAsc(roomId);
+        Map<Long, String> nicknameByUserId = nicknamesFor(participants);
+
+        Map<Long, Integer> totalScoreByUserId = gameRoomAnswerRepository.findAllByRoomIdAndRound(roomId, round).stream()
                 .collect(Collectors.groupingBy(
                         GameRoomAnswer::getUserId,
                         Collectors.summingInt(GameRoomAnswer::getScore)));
 
-        List<LeaderboardEntryResponse> entries = new ArrayList<>();
+        List<ScoreboardEntryResponse> entries = new ArrayList<>();
         for (RoomParticipant p : participants) {
-            entries.add(LeaderboardEntryResponse.builder()
+            entries.add(ScoreboardEntryResponse.builder()
                     .userId(p.getUserId())
                     .nickname(nicknameByUserId.get(p.getUserId()))
                     .totalScore(totalScoreByUserId.getOrDefault(p.getUserId(), 0))
                     .build());
         }
 
-        entries.sort(Comparator.comparingInt(LeaderboardEntryResponse::getTotalScore).reversed());
+        entries.sort(Comparator.comparingInt(ScoreboardEntryResponse::getTotalScore).reversed());
 
-        List<LeaderboardEntryResponse> ranked = new ArrayList<>();
+        List<ScoreboardEntryResponse> ranked = new ArrayList<>();
         for (int i = 0; i < entries.size(); i++) {
-            LeaderboardEntryResponse e = entries.get(i);
-            ranked.add(LeaderboardEntryResponse.builder()
+            ScoreboardEntryResponse e = entries.get(i);
+            ranked.add(ScoreboardEntryResponse.builder()
                     .rank(i + 1)
                     .userId(e.getUserId())
                     .nickname(e.getNickname())
@@ -522,26 +574,35 @@ public class RoomService {
                 .collect(Collectors.toMap(User::getId, User::getNickname));
     }
 
-    /** 방 category(전체 포함)/difficulty(레벨 범위)에 맞는 게임용 문제 후보를 조회한다. */
-    private List<Question> findEligibleQuestions(Category category, Difficulty difficulty) {
+    /**
+     * 방 category(전체 포함)/difficulty(레벨 범위)에 맞는 게임용 문제 후보를 조회한다.
+     * {@code excludedQuestionIds} 에 담긴 문제(이 방에서 이전 판까지 이미 나온 문제)는 후보에서 제외한다.
+     */
+    private List<Question> findEligibleQuestions(Category category, Difficulty difficulty,
+                                                 Set<Long> excludedQuestionIds) {
         List<Integer> levels = levelsFor(difficulty);
 
+        List<Question> pool;
         if (category == Category.전체) {
-            return questionRepository.findAllByGameModeAndLevelIn(ROOM_GAME_MODE, levels);
+            pool = questionRepository.findAllByGameModeAndLevelIn(ROOM_GAME_MODE, levels);
+        } else {
+            // TODO: room.enums.Category 와 news.enums.NewsCategory 가 값이 같은 별개 enum이라 이름으로 변환한다.
+            // 둘을 하나로 합치면 이 변환은 필요 없어진다.
+            NewsCategory newsCategory = NewsCategory.valueOf(category.name());
+            List<Long> newsIds = newsRepository.findAllByCategory(newsCategory).stream()
+                    .map(News::getId)
+                    .toList();
+
+            if (newsIds.isEmpty()) {
+                return List.of();
+            }
+
+            pool = questionRepository.findAllByNewsIdInAndGameModeAndLevelIn(newsIds, ROOM_GAME_MODE, levels);
         }
 
-        // TODO: room.enums.Category 와 news.enums.NewsCategory 가 값이 같은 별개 enum이라 이름으로 변환한다.
-        // 둘을 하나로 합치면 이 변환은 필요 없어진다.
-        NewsCategory newsCategory = NewsCategory.valueOf(category.name());
-        List<Long> newsIds = newsRepository.findAllByCategory(newsCategory).stream()
-                .map(News::getId)
+        return pool.stream()
+                .filter(q -> !excludedQuestionIds.contains(q.getId()))
                 .toList();
-
-        if (newsIds.isEmpty()) {
-            return List.of();
-        }
-
-        return questionRepository.findAllByNewsIdInAndGameModeAndLevelIn(newsIds, ROOM_GAME_MODE, levels);
     }
 
     /** 난이도 → News/Question level(1~5) 매핑. 하=1,2 / 중=3,4 / 상=5 / 랜덤=1~5. */

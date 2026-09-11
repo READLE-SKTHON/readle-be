@@ -52,6 +52,10 @@ public class GameRoom extends BaseTimeEntity {
     @Column(name = "started_at")
     private LocalDateTime startedAt;
 
+    /** 지금까지 몇 판(round)을 시작했는지. 0 = 아직 한 판도 시작 안 함. 같은 방에서 재시작할 때마다 1씩 증가. */
+    @Column(name = "current_round", nullable = false)
+    private Integer currentRound = 0;
+
     @Builder
     public GameRoom(Long roomCode, String inviteLink, Category category,
                     Integer timer, Integer memberCount, Integer questionCount,
@@ -65,11 +69,16 @@ public class GameRoom extends BaseTimeEntity {
         this.difficulty = difficulty;
     }
 
-    /** 게임을 시작 상태로 전환한다. 이미 시작된 방인지는 호출부(Service)에서 먼저 확인해야 한다. */
+    /**
+     * 새 판을 시작한다. {@code currentRound} 를 1 증가시키고 시작 시각을 지금으로 갱신한다.
+     * 이전 판이 아직 진행 중인지는 호출부(Service)에서 먼저 확인해야 한다.
+     */
     public void start() {
+        this.currentRound = this.currentRound + 1;
         this.startedAt = LocalDateTime.now();
     }
 
+    /** 지금까지 한 번이라도 시작한 적이 있는지 (진행 중이든 끝났든). */
     public boolean isStarted() {
         return startedAt != null;
     }

@@ -28,6 +28,10 @@ public class GameRoomQuestion {
     @Column(name = "room_id", nullable = false)
     private Long roomId;
 
+    /** 몇 번째 판(round)에 배정된 문제인지. 같은 방을 재시작해도 판별로 구분된다. */
+    @Column(nullable = false)
+    private Integer round;
+
     @Column(name = "question_id", nullable = false)
     private Long questionId;
 
@@ -35,8 +39,9 @@ public class GameRoomQuestion {
     private Integer displayOrder;
 
     @Builder
-    public GameRoomQuestion(Long roomId, Long questionId, Integer displayOrder) {
+    public GameRoomQuestion(Long roomId, Integer round, Long questionId, Integer displayOrder) {
         this.roomId = roomId;
+        this.round = round;
         this.questionId = questionId;
         this.displayOrder = displayOrder;
     }

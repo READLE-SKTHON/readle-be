@@ -7,8 +7,10 @@ import java.util.List;
 import java.util.Optional;
 
 public interface GameRoomAnswerRepository extends JpaRepository<GameRoomAnswer, Long> {
-    boolean existsByRoomIdAndQuestionIdAndUserId(Long roomId, Long questionId, Long userId);
-    Optional<GameRoomAnswer> findByRoomIdAndQuestionIdAndUserId(Long roomId, Long questionId, Long userId);
-    List<GameRoomAnswer> findAllByRoomIdAndQuestionId(Long roomId, Long questionId);
-    List<GameRoomAnswer> findAllByRoomId(Long roomId);
+    boolean existsByRoomIdAndRoundAndQuestionIdAndUserId(
+            Long roomId, Integer round, Long questionId, Long userId);
+    Optional<GameRoomAnswer> findByRoomIdAndRoundAndQuestionIdAndUserId(
+            Long roomId, Integer round, Long questionId, Long userId);
+    List<GameRoomAnswer> findAllByRoomIdAndRoundAndQuestionId(Long roomId, Integer round, Long questionId);
+    List<GameRoomAnswer> findAllByRoomIdAndRound(Long roomId, Integer round);
 }

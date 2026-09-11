@@ -34,7 +34,8 @@ public class GameController {
     private final RoomService roomService;
 
     @PostMapping("/{gameRoomId}/start")
-    @Operation(summary = "게임 시작", description = "방장이 게임을 시작합니다. 방 설정(카테고리/난이도/문제 수)에 맞는 문제를 랜덤으로 배정합니다.")
+    @Operation(summary = "게임 시작/재시작"
+        + "", description = "방장이 게임을 시작합니다. 방 설정(카테고리/난이도/문제 수)에 맞는 문제를 랜덤으로 배정합니다.")
     public ResponseEntity<BaseResponse<StartGameResponse>> startGame(
             @CurrentUser Long userId,
             @PathVariable Long gameRoomId

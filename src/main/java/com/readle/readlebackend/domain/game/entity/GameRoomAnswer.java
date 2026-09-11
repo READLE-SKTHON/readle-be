@@ -30,6 +30,10 @@ public class GameRoomAnswer {
     @Column(name = "room_id", nullable = false)
     private Long roomId;
 
+    /** 몇 번째 판(round)에 제출한 답인지. 판마다 점수가 초기화되므로 이 기준으로 집계한다. */
+    @Column(nullable = false)
+    private Integer round;
+
     @Column(name = "question_id", nullable = false)
     private Long questionId;
 
@@ -49,9 +53,10 @@ public class GameRoomAnswer {
     private LocalDateTime answeredAt;
 
     @Builder
-    public GameRoomAnswer(Long roomId, Long questionId, Long userId, String selectedAnswer,
+    public GameRoomAnswer(Long roomId, Integer round, Long questionId, Long userId, String selectedAnswer,
                           Boolean isCorrect, Integer score, LocalDateTime answeredAt) {
         this.roomId = roomId;
+        this.round = round;
         this.questionId = questionId;
         this.userId = userId;
         this.selectedAnswer = selectedAnswer;

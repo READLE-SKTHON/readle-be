@@ -7,7 +7,7 @@ import lombok.Getter;
 @Getter
 @Builder
 @Schema(description = "순위표 항목")
-public class LeaderboardEntryResponse {
+public class ScoreboardEntryResponse {
 
     @Schema(description = "순위 (1부터)", example = "1")
     private Integer rank;

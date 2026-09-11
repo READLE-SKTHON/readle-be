@@ -15,6 +15,9 @@ public class StartGameResponse {
     @Schema(description = "방 ID", example = "1")
     private Long roomId;
 
+    @Schema(description = "이 방에서 몇 번째 판(라운드)인지, 1부터 시작 (같은 방으로 재시작할 때마다 증가)", example = "1")
+    private Integer round;
+
     @Schema(description = "게임 시작 시각")
     private LocalDateTime startedAt;
 
