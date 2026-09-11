@@ -17,4 +17,7 @@ public class MyResultResponse {
 
     @Schema(description = "정답", example = "O")
     private String correctAnswer;
+
+    @Schema(description = "정답 근거 설명 (한두 줄)", example = "문단에서 '문해력 향상을 위한 정부의 노력'이 핵심 소재로 제시되고 있습니다.")
+    private String explanation;
 }
