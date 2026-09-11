@@ -9,6 +9,7 @@ services:
       - DB_URL=jdbc:postgresql://postgres:5432/readle_db
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
+      - GEMINI_KEY=${GEMINI_KEY}
     depends_on:
       postgres:
         condition: service_healthy
