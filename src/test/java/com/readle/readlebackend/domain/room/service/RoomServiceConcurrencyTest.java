@@ -1,9 +1,11 @@
 package com.readle.readlebackend.domain.room.service;
 
 import com.readle.readlebackend.domain.game.dto.request.GameSubmitAnswerRequest;
+import com.readle.readlebackend.domain.game.dto.response.GameStatusResponse;
 import com.readle.readlebackend.domain.game.dto.response.StartGameResponse;
 import com.readle.readlebackend.domain.game.entity.GameRoomAnswer;
 import com.readle.readlebackend.domain.game.entity.GameRoomQuestion;
+import com.readle.readlebackend.domain.game.enums.GamePhase;
 import com.readle.readlebackend.domain.game.repository.GameRoomAnswerRepository;
 import com.readle.readlebackend.domain.game.repository.GameRoomQuestionRepository;
 import com.readle.readlebackend.domain.news.entity.News;
@@ -305,5 +307,60 @@ class RoomServiceConcurrencyTest {
 
         GameRoom afterSecondStart = gameRoomRepository.findById(room.getId()).orElseThrow();
         assertThat(afterSecondStart.getCurrentRound()).isEqualTo(2);
+    }
+
+    @Test
+    void 참가자_전원이_제출하면_타이머가_남아도_바로_정답공개로_넘어간다() {
+        News news = newsRepository.save(News.builder()
+                .title("테스트 기사")
+                .category(NewsCategory.전체)
+                .publisher("테스트 언론사")
+                .publishedAt(LocalDateTime.now())
+                .content("테스트 본문")
+                .sourceUrl("https://example.com/test")
+                .level(1)
+                .build());
+
+        questionRepository.save(Question.builder()
+                .newsId(news.getId())
+                .content("전원 제출 테스트 문제")
+                .questionFormat(QuestionFormat.OX)
+                .choices("[]")
+                .answer("O")
+                .explanation("설명")
+                .hint("힌트")
+                .gameMode(GameMode.room)
+                .mainCategory(MainCategory.vocab)
+                .subCategory(SubCategory.vocab_meaning)
+                .level(1)
+                .build());
+
+        // 타이머를 길게 둬서, 조기 공개 로직이 없다면 절대 REVEAL로 안 넘어갈 정도로 여유를 둔다.
+        GameRoom room = gameRoomRepository.save(GameRoom.builder()
+                .roomCode(9996L)
+                .inviteLink("https://dummy-invite-link.com")
+                .category(Category.전체)
+                .difficulty(Difficulty.랜덤)
+                .timer(60)
+                .memberCount(2)
+                .questionCount(1)
+                .build());
+
+        roomParticipantRepository.save(RoomParticipant.builder()
+                .userId(HOST_USER_ID).roomId(room.getId()).isHost(true).build());
+        roomParticipantRepository.save(RoomParticipant.builder()
+                .userId(OTHER_USER_ID).roomId(room.getId()).isHost(false).build());
+
+        roomService.startGame(HOST_USER_ID, room.getId());
+
+        roomService.submitAnswer(HOST_USER_ID, room.getId(), 0,
+                GameSubmitAnswerRequest.builder().selectedAnswer("O").build());
+        roomService.submitAnswer(OTHER_USER_ID, room.getId(), 0,
+                GameSubmitAnswerRequest.builder().selectedAnswer("O").build());
+
+        GameStatusResponse status = roomService.getStatus(HOST_USER_ID, room.getId());
+
+        assertThat(status.getPhase()).as("타이머(60초) 남았어도 전원 제출했으면 REVEAL이어야 함")
+                .isEqualTo(GamePhase.REVEAL);
     }
 }
