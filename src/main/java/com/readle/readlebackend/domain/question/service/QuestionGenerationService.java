@@ -174,7 +174,7 @@ public class QuestionGenerationService {
                 .append("다양하게 써서 같은 세트 안에 내용이 겹치지 않게 해라.\n");
         sb.append("2. multiple_choice는 choices 4개 + answer는 그중 하나와 글자까지 일치. OX는 choices 빈 배열 + answer는 'O' 또는 'X'. ")
                 .append("short_answer는 choices 빈 배열.\n");
-        sb.append("3. explanation은 정답 근거를 알차고 구체적으로 설명하는 한 문장으로 반드시 채워라.\n");
+        sb.append("3. explanation은 정답 근거를 알차고 구체적으로 설명하는 반드시 한 문장으로 반드시 채워라.\n");
         sb.append("4. hint는 정답을 직접 알려주지 말고 기사의 어느 부분을 다시 보면 좋을지 방향을 알려주는 한 문장으로 반드시 채워라. ")
                 .append("(빈 문자열 금지)\n");
         sb.append("5. explanation·hint는 각각 정확히 한 문장(줄바꿈·나열 금지)만 작성해라.\n");

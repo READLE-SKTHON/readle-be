@@ -29,3 +29,4 @@ cors:
 gemini:
   api-key: ${GEMINI_KEY}
   model: gemini-2.5-flash
+  embedding-model: gemini-embedding-001

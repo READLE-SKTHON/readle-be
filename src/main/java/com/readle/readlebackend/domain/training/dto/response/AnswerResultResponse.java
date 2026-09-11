@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Getter
 @Builder
 @NoArgsConstructor
@@ -24,4 +26,7 @@ public class AnswerResultResponse {
 
     @Schema(description = "오늘 획득한 경험치", example = "320")
     private int earnedExp;
+
+    @Schema(description = "능력치 카테고리별 누적 평균 점수 목록 (근거형 문제를 한 번도 평가받지 않았으면 빈 리스트)")
+    private List<SkillResultDto> skillResults;
 }
