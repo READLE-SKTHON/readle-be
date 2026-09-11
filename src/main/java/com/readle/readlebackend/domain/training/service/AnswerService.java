@@ -199,6 +199,7 @@ public class AnswerService {
                 .feedback(SubmitAnswerResponse.Feedback.builder()
                         .explanation(question.getExplanation())
                         .mistakeFeedback(grading.mistakeFeedback())
+                        .comment(grading.feedback())
                         .hint(grading.resultStatus() == ResultStatus.correct ? null : question.getHint())
                         .build())
                 .build();
