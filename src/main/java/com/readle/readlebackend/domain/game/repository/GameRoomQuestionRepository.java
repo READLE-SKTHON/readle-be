@@ -12,9 +12,6 @@ import java.util.Optional;
 
 public interface GameRoomQuestionRepository extends JpaRepository<GameRoomQuestion, Long> {
 
-    /** 이 방에서 지금까지(모든 판 포함) 배정된 적 있는 문제 전부. 재시작 시 재사용 제외용. */
-    List<GameRoomQuestion> findAllByRoomId(Long roomId);
-
     List<GameRoomQuestion> findAllByRoomIdAndRoundOrderByDisplayOrderAsc(Long roomId, Integer round);
 
     Optional<GameRoomQuestion> findByRoomIdAndRoundAndDisplayOrder(

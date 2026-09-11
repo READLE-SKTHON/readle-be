@@ -47,6 +47,8 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers("/api/questions/generate/**")
                                         .permitAll()
+                                        .requestMatchers("/api/news/today-representative-articles/**")
+                                        .permitAll()
                                         .anyRequest()
                                         .authenticated())
                 .exceptionHandling(

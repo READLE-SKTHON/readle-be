@@ -1,9 +1,11 @@
 package com.readle.readlebackend.domain.room.service;
 
-import com.readle.readlebackend.domain.game.dto.request.SubmitAnswerRequest;
+import com.readle.readlebackend.domain.game.dto.request.GameSubmitAnswerRequest;
+import com.readle.readlebackend.domain.game.dto.response.GameStatusResponse;
 import com.readle.readlebackend.domain.game.dto.response.StartGameResponse;
 import com.readle.readlebackend.domain.game.entity.GameRoomAnswer;
 import com.readle.readlebackend.domain.game.entity.GameRoomQuestion;
+import com.readle.readlebackend.domain.game.enums.GamePhase;
 import com.readle.readlebackend.domain.game.repository.GameRoomAnswerRepository;
 import com.readle.readlebackend.domain.game.repository.GameRoomQuestionRepository;
 import com.readle.readlebackend.domain.news.entity.News;
@@ -218,7 +220,7 @@ class RoomServiceConcurrencyTest {
                 try {
                     startLatch.await();
                     roomService.submitAnswer(submitterId, room.getId(), 0,
-                            SubmitAnswerRequest.builder().selectedAnswer("O").build());
+                            GameSubmitAnswerRequest.builder().selectedAnswer("O").build());
                     outcomes.add("SUCCESS");
                 } catch (CustomException e) {
                     outcomes.add(e.getErrorCode().getCode());
@@ -253,7 +255,7 @@ class RoomServiceConcurrencyTest {
     }
 
     @Test
-    void 같은_방에서_재시작하면_라운드가_증가하고_문제가_겹치지_않는다() throws InterruptedException {
+    void 같은_방에서_재시작하면_라운드가_증가한다() throws InterruptedException {
         News news = newsRepository.save(News.builder()
                 .title("테스트 기사")
                 .category(NewsCategory.전체)
@@ -264,22 +266,19 @@ class RoomServiceConcurrencyTest {
                 .level(1)
                 .build());
 
-        // 라운드당 1문제씩만 쓰므로, 재시작 검증엔 서로 다른 문제 2개 이상이 있어야 함.
-        for (int i = 0; i < 3; i++) {
-            questionRepository.save(Question.builder()
-                    .newsId(news.getId())
-                    .content("재시작 테스트 문제 " + i)
-                    .questionFormat(QuestionFormat.OX)
-                    .choices("[]")
-                    .answer("O")
-                    .explanation("설명")
-                    .hint("힌트")
-                    .gameMode(GameMode.room)
-                    .mainCategory(MainCategory.vocab)
-                    .subCategory(SubCategory.vocab_meaning)
-                    .level(1)
-                    .build());
-        }
+        questionRepository.save(Question.builder()
+                .newsId(news.getId())
+                .content("재시작 테스트 문제")
+                .questionFormat(QuestionFormat.OX)
+                .choices("[]")
+                .answer("O")
+                .explanation("설명")
+                .hint("힌트")
+                .gameMode(GameMode.room)
+                .mainCategory(MainCategory.vocab)
+                .subCategory(SubCategory.vocab_meaning)
+                .level(1)
+                .build());
 
         // 타이머를 최소로 둬서(1초) 판이 금방 끝나게 한다. (@AllowedIntValues 는 DTO 검증이라 엔티티 직접 생성엔 안 걸림)
         GameRoom room = gameRoomRepository.save(GameRoom.builder()
@@ -295,8 +294,7 @@ class RoomServiceConcurrencyTest {
         roomParticipantRepository.save(RoomParticipant.builder()
                 .userId(HOST_USER_ID).roomId(room.getId()).isHost(true).build());
 
-        StartGameResponse firstRound = roomService.startGame(HOST_USER_ID, room.getId());
-        Long firstQuestionId = firstRound.getQuestions().get(0).getQuestionId();
+        roomService.startGame(HOST_USER_ID, room.getId());
 
         GameRoom afterFirstStart = gameRoomRepository.findById(room.getId()).orElseThrow();
         assertThat(afterFirstStart.getCurrentRound()).isEqualTo(1);
@@ -304,11 +302,65 @@ class RoomServiceConcurrencyTest {
         // 판이 끝날 때까지 대기: 타이머(1) + 정답공개(3) + 순위공개(3) = 7초
         Thread.sleep(7_500);
 
-        StartGameResponse secondRound = roomService.startGame(HOST_USER_ID, room.getId());
-        Long secondQuestionId = secondRound.getQuestions().get(0).getQuestionId();
+        // 문제 풀이 하나뿐이라도(재사용 허용) 재시작이 성공해야 함
+        roomService.startGame(HOST_USER_ID, room.getId());
 
         GameRoom afterSecondStart = gameRoomRepository.findById(room.getId()).orElseThrow();
         assertThat(afterSecondStart.getCurrentRound()).isEqualTo(2);
-        assertThat(secondQuestionId).as("이전 판에서 나온 문제를 재사용하면 안 됨").isNotEqualTo(firstQuestionId);
+    }
+
+    @Test
+    void 참가자_전원이_제출하면_타이머가_남아도_바로_정답공개로_넘어간다() {
+        News news = newsRepository.save(News.builder()
+                .title("테스트 기사")
+                .category(NewsCategory.전체)
+                .publisher("테스트 언론사")
+                .publishedAt(LocalDateTime.now())
+                .content("테스트 본문")
+                .sourceUrl("https://example.com/test")
+                .level(1)
+                .build());
+
+        questionRepository.save(Question.builder()
+                .newsId(news.getId())
+                .content("전원 제출 테스트 문제")
+                .questionFormat(QuestionFormat.OX)
+                .choices("[]")
+                .answer("O")
+                .explanation("설명")
+                .hint("힌트")
+                .gameMode(GameMode.room)
+                .mainCategory(MainCategory.vocab)
+                .subCategory(SubCategory.vocab_meaning)
+                .level(1)
+                .build());
+
+        // 타이머를 길게 둬서, 조기 공개 로직이 없다면 절대 REVEAL로 안 넘어갈 정도로 여유를 둔다.
+        GameRoom room = gameRoomRepository.save(GameRoom.builder()
+                .roomCode(9996L)
+                .inviteLink("https://dummy-invite-link.com")
+                .category(Category.전체)
+                .difficulty(Difficulty.랜덤)
+                .timer(60)
+                .memberCount(2)
+                .questionCount(1)
+                .build());
+
+        roomParticipantRepository.save(RoomParticipant.builder()
+                .userId(HOST_USER_ID).roomId(room.getId()).isHost(true).build());
+        roomParticipantRepository.save(RoomParticipant.builder()
+                .userId(OTHER_USER_ID).roomId(room.getId()).isHost(false).build());
+
+        roomService.startGame(HOST_USER_ID, room.getId());
+
+        roomService.submitAnswer(HOST_USER_ID, room.getId(), 0,
+                GameSubmitAnswerRequest.builder().selectedAnswer("O").build());
+        roomService.submitAnswer(OTHER_USER_ID, room.getId(), 0,
+                GameSubmitAnswerRequest.builder().selectedAnswer("O").build());
+
+        GameStatusResponse status = roomService.getStatus(HOST_USER_ID, room.getId());
+
+        assertThat(status.getPhase()).as("타이머(60초) 남았어도 전원 제출했으면 REVEAL이어야 함")
+                .isEqualTo(GamePhase.REVEAL);
     }
 }

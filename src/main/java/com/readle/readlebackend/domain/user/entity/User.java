@@ -88,4 +88,10 @@ public class User extends BaseTimeEntity {
         if (xp < 2400) return 4L;
         return 5L;
     }
+
+    // 복습 문제 정답 시 xp & 레벨 반영 (연속 학습일은 갱신하지 않음)
+    public void addReviewXp(int earnedXp) {
+        this.xp = (this.xp == null ? 0 : this.xp) + earnedXp;
+        this.level = calculateLevel(this.xp);
+    }
 }
