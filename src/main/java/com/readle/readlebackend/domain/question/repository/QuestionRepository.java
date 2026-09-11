@@ -2,6 +2,7 @@ package com.readle.readlebackend.domain.question.repository;
 
 import com.readle.readlebackend.domain.question.entity.Question;
 import com.readle.readlebackend.domain.question.enums.GameMode;
+import com.readle.readlebackend.domain.question.enums.SubCategory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -33,4 +34,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
 
     // 오늘의 대표 기사(newsId)에 연결된 특정 게임 모드의 문제 전체 조회
     List<Question> findAllByNewsIdAndGameMode(Long newsId, GameMode gameMode);
+
+    // 복습용: 같은 레벨/소분류에서 특정 기사(newsId)를 제외한 "다른 지문" 문제 후보 조회
+    List<Question> findAllByLevelAndSubCategoryAndNewsIdNotIn(Integer level, SubCategory subCategory, List<Long> excludedNewsIds);
 }

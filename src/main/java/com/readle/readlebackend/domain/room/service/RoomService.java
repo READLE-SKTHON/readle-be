@@ -198,12 +198,7 @@ public class RoomService {
             throw new CustomException(RoomErrorCode.ROOM_ALREADY_STARTED);
         }
 
-        // 이 방에서 이전 판까지 이미 나온 문제는 재사용하지 않는다.
-        Set<Long> usedQuestionIds = gameRoomQuestionRepository.findAllByRoomId(roomId).stream()
-                .map(GameRoomQuestion::getQuestionId)
-                .collect(Collectors.toSet());
-
-        List<Question> pool = findEligibleQuestions(room.getCategory(), room.getDifficulty(), usedQuestionIds);
+        List<Question> pool = findEligibleQuestions(room.getCategory(), room.getDifficulty());
         if (pool.size() < room.getQuestionCount()) {
             throw new CustomException(RoomErrorCode.INSUFFICIENT_QUESTIONS);
         }
@@ -304,13 +299,13 @@ public class RoomService {
         Question question = questionRepository.findById(assignment.getQuestionId())
                 .orElseThrow(() -> new CustomException(RoomErrorCode.QUESTION_ORDER_OUT_OF_RANGE));
 
+        List<GameRoomAnswer> existingAnswers = gameRoomAnswerRepository
+                .findAllByRoomIdAndRoundAndQuestionId(roomId, round, assignment.getQuestionId());
+
         boolean isCorrect = isCorrectAnswer(question, request.getSelectedAnswer());
         int score = 0;
         if (isCorrect) {
-            long correctSoFar = gameRoomAnswerRepository
-                    .findAllByRoomIdAndRoundAndQuestionId(roomId, round, assignment.getQuestionId()).stream()
-                    .filter(GameRoomAnswer::getIsCorrect)
-                    .count();
+            long correctSoFar = existingAnswers.stream().filter(GameRoomAnswer::getIsCorrect).count();
             score = scoreForRank((int) correctSoFar + 1);
         }
 
@@ -330,6 +325,14 @@ public class RoomService {
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
             // 동시에 두 번 제출돼도 DB unique 제약이 마지막 방어선 역할을 한다.
             throw new CustomException(RoomErrorCode.ALREADY_ANSWERED);
+        }
+
+        // 참가자 전원이 이번 문제를 다 풀었으면, 타이머가 남아있어도 바로 정답 공개로 넘어간다.
+        int totalAnsweredNow = existingAnswers.size() + 1;
+        int totalParticipants = roomParticipantRepository.countByRoomId(roomId);
+        if (totalAnsweredNow >= totalParticipants) {
+            assignment.endAnsweringNow(LocalDateTime.now());
+            gameRoomQuestionRepository.save(assignment);
         }
 
         return SubmitAnswerResponse.builder()
@@ -397,29 +400,50 @@ public class RoomService {
         return builder.build();
     }
 
-    /** 지금이 몇 번째 문제, 어떤 페이즈, 얼마나 남았는지 경과 시간만으로 계산한다. */
+    /**
+     * 지금이 몇 번째 문제, 어떤 페이즈, 얼마나 남았는지 계산한다. 기본은 경과 시간 기준(타이머)이지만,
+     * 참가자 전원이 이미 답을 제출해서 {@link GameRoomQuestion#getAnsweringEndedAt()} 이 기록된 문제는
+     * 그 시각에 ANSWERING이 끝난 것으로 앞당겨 계산한다 (뒤 문제들의 시작 시각도 그만큼 당겨짐).
+     */
     private GameProgress calculateProgress(GameRoom room) {
-        long elapsed = Duration.between(room.getStartedAt(), LocalDateTime.now()).getSeconds();
-        int cycle = room.getTimer() + REVEAL_SECONDS + LEADERBOARD_SECONDS;
-        long totalDuration = (long) cycle * room.getQuestionCount();
+        List<GameRoomQuestion> assignments = gameRoomQuestionRepository
+                .findAllByRoomIdAndRoundOrderByDisplayOrderAsc(room.getId(), room.getCurrentRound());
 
-        if (elapsed >= totalDuration) {
-            return new GameProgress(GamePhase.FINISHED, room.getQuestionCount() - 1, 0);
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime cursor = room.getStartedAt();
+
+        for (int order = 0; order < room.getQuestionCount(); order++) {
+            LocalDateTime nominalAnsweringEnd = cursor.plusSeconds(room.getTimer());
+            LocalDateTime answeringEnd = nominalAnsweringEnd;
+            if (order < assignments.size()) {
+                LocalDateTime earlyEnd = assignments.get(order).getAnsweringEndedAt();
+                if (earlyEnd != null && earlyEnd.isBefore(nominalAnsweringEnd)) {
+                    answeringEnd = earlyEnd;
+                }
+            }
+
+            if (now.isBefore(answeringEnd)) {
+                return new GameProgress(GamePhase.ANSWERING, order, secondsUntil(now, answeringEnd));
+            }
+
+            LocalDateTime revealEnd = answeringEnd.plusSeconds(REVEAL_SECONDS);
+            if (now.isBefore(revealEnd)) {
+                return new GameProgress(GamePhase.REVEAL, order, secondsUntil(now, revealEnd));
+            }
+
+            LocalDateTime leaderboardEnd = revealEnd.plusSeconds(LEADERBOARD_SECONDS);
+            if (now.isBefore(leaderboardEnd)) {
+                return new GameProgress(GamePhase.LEADERBOARD, order, secondsUntil(now, leaderboardEnd));
+            }
+
+            cursor = leaderboardEnd;
         }
 
-        int questionOrder = (int) (elapsed / cycle);
-        long withinCycle = elapsed % cycle;
+        return new GameProgress(GamePhase.FINISHED, room.getQuestionCount() - 1, 0);
+    }
 
-        if (withinCycle < room.getTimer()) {
-            int remaining = (int) (room.getTimer() - withinCycle);
-            return new GameProgress(GamePhase.ANSWERING, questionOrder, remaining);
-        } else if (withinCycle < room.getTimer() + REVEAL_SECONDS) {
-            int remaining = (int) (room.getTimer() + REVEAL_SECONDS - withinCycle);
-            return new GameProgress(GamePhase.REVEAL, questionOrder, remaining);
-        } else {
-            int remaining = (int) (cycle - withinCycle);
-            return new GameProgress(GamePhase.LEADERBOARD, questionOrder, remaining);
-        }
+    private int secondsUntil(LocalDateTime now, LocalDateTime until) {
+        return (int) Math.max(0, Duration.between(now, until).getSeconds());
     }
 
     private record GameProgress(GamePhase phase, int questionOrder, int remainingSeconds) {
@@ -591,12 +615,8 @@ public class RoomService {
                 .collect(Collectors.toMap(User::getId, User::getNickname));
     }
 
-    /**
-     * 방 category(전체 포함)/difficulty(레벨 범위)에 맞는 게임용 문제 후보를 조회한다.
-     * {@code excludedQuestionIds} 에 담긴 문제(이 방에서 이전 판까지 이미 나온 문제)는 후보에서 제외한다.
-     */
-    private List<Question> findEligibleQuestions(Category category, Difficulty difficulty,
-                                                 Set<Long> excludedQuestionIds) {
+    /** 방 category(전체 포함)/difficulty(레벨 범위)에 맞는 게임용 문제 후보를 조회한다. 판이 바뀌어도 재사용 가능하다. */
+    private List<Question> findEligibleQuestions(Category category, Difficulty difficulty) {
         List<Integer> levels = levelsFor(difficulty);
 
         List<Question> pool;
@@ -617,9 +637,7 @@ public class RoomService {
             pool = questionRepository.findAllByNewsIdInAndGameModeAndLevelIn(newsIds, ROOM_GAME_MODE, levels);
         }
 
-        return pool.stream()
-                .filter(q -> !excludedQuestionIds.contains(q.getId()))
-                .toList();
+        return pool;
     }
 
     /** 난이도 → News/Question level(1~5) 매핑. 하=1,2 / 중=3,4 / 상=5 / 랜덤=1~5. */
