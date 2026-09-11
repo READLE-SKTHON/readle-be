@@ -2,6 +2,7 @@ package com.readle.readlebackend.domain.training.controller;
 
 import com.readle.readlebackend.domain.training.dto.request.SubmitAnswerRequest;
 import com.readle.readlebackend.domain.training.dto.response.AnswerResultResponse;
+import com.readle.readlebackend.domain.training.dto.response.SkillResultResponse;
 import com.readle.readlebackend.domain.training.dto.response.SubmitAnswerResponse;
 import com.readle.readlebackend.domain.training.dto.response.TodayQuestionsResponse;
 
@@ -63,5 +64,19 @@ public class AnswerController {
 
         // 응답 반환
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(200, "오늘 문제풀이 결과 조회 성공", response));
+    }
+
+    // 능력치(5개 카테고리) 누적 평균 점수 단독 조회
+    @Operation(summary = "능력치 결과 조회",
+            description = "유저의 능력치(문자해독/내용이해/맥락파악/추론/비판적사고) 카테고리별 누적 평균 점수를 조회하는 API")
+    @GetMapping("/training/skills")
+    public ResponseEntity<BaseResponse<SkillResultResponse>> getSkillSummary(
+            @CurrentUser Long userId) {
+
+        // service 호출
+        SkillResultResponse response = answerService.getSkillSummary(userId);
+
+        // 응답 반환
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(200, "능력치 결과 조회 성공", response));
     }
 }
