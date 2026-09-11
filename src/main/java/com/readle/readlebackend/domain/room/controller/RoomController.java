@@ -42,11 +42,12 @@ public class RoomController {
     }
 
     @GetMapping("/{roomId}/participants")
-    @Operation(summary = "참여자 목록 조회", description = "대기방 참여자 목록을 조회합니다. 프론트에서 폴링으로 반복 호출합니다.")
+    @Operation(summary = "참여자 목록 조회", description = "대기방 참여자 목록을 조회합니다. 해당 방 참여자만 조회 가능하며, 프론트에서 폴링으로 반복 호출합니다.")
     public ResponseEntity<BaseResponse<RoomParticipantsResponse>> getParticipants(
+            @CurrentUser Long userId,
             @PathVariable Long roomId
     ) {
-        RoomParticipantsResponse response = roomService.getParticipants(roomId);
+        RoomParticipantsResponse response = roomService.getParticipants(userId, roomId);
         return ResponseEntity.ok(BaseResponse.success(response));
     }
 }

@@ -93,9 +93,13 @@ public class RoomService {
     /**
      * 대기방 참여자 목록을 조회한다. 프론트에서 폴링으로 주기 호출하는 용도.
      */
-    public RoomParticipantsResponse getParticipants(Long roomId) {
+    public RoomParticipantsResponse getParticipants(Long userId, Long roomId) {
         GameRoom room = gameRoomRepository.findById(roomId)
                 .orElseThrow(() -> new CustomException(RoomErrorCode.ROOM_NOT_FOUND));
+
+        if (!roomParticipantRepository.existsByRoomIdAndUserId(roomId, userId)) {
+            throw new CustomException(RoomErrorCode.NOT_ROOM_PARTICIPANT);
+        }
 
         List<RoomParticipant> participants =
                 roomParticipantRepository.findAllByRoomIdOrderByJoinedAtAsc(roomId);
