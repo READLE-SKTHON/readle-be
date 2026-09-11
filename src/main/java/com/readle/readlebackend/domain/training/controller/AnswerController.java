@@ -1,17 +1,18 @@
 package com.readle.readlebackend.domain.training.controller;
 
+import com.readle.readlebackend.domain.training.dto.request.SubmitAnswerRequest;
+import com.readle.readlebackend.domain.training.dto.response.SubmitAnswerResponse;
 import com.readle.readlebackend.domain.training.dto.response.TodayQuestionsResponse;
 import com.readle.readlebackend.domain.training.service.AnswerService;
 import com.readle.readlebackend.global.auth.CurrentUser;
 import com.readle.readlebackend.global.common.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -32,5 +33,20 @@ public class AnswerController {
 
         // 응답 반환
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(200, "오늘의 문제 조회 성공", response));
+    }
+
+    // 답안 제출
+    @Operation(summary = "답안 제출", description = "문제 하나에 대한 답안을 제출하고 채점 결과를 받는 API")
+    @PostMapping("/training/questions/{question-id}/submit")
+    public ResponseEntity<BaseResponse<SubmitAnswerResponse>> submitAnswer(
+            @CurrentUser Long userId,
+            @PathVariable("question-id") Long questionId,
+            @Valid @RequestBody SubmitAnswerRequest request) {
+
+        // service 호출
+        SubmitAnswerResponse response = answerService.submitAnswer(request, userId, questionId);
+
+        // 응답 반환
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(200, "답안 제출 성공", response));
     }
 }
