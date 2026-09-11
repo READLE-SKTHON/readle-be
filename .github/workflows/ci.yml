@@ -24,3 +24,5 @@ jobs:
       # DB 는 Testcontainers 가 테스트 실행 시 자동 기동한다 (ubuntu-latest 에 Docker 포함).
       - name: Build and test
         run: ./gradlew build
+        env:
+          GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
