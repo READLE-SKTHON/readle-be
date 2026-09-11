@@ -5,25 +5,31 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.readle.readlebackend.domain.question.client.GeminiClient;
+import com.readle.readlebackend.domain.question.dto.GeneratedQuestionDto;
 import com.readle.readlebackend.domain.question.dto.QuestionGenerationRequest;
 import com.readle.readlebackend.domain.question.dto.QuestionGenerationResult;
+import com.readle.readlebackend.domain.question.entity.Question;
+import com.readle.readlebackend.domain.question.enums.GameMode;
 import com.readle.readlebackend.domain.question.enums.MainCategory;
 import com.readle.readlebackend.domain.question.enums.QuestionFormat;
 import com.readle.readlebackend.domain.question.enums.SubCategory;
 import com.readle.readlebackend.domain.question.exception.QuestionErrorCode;
+import com.readle.readlebackend.domain.question.repository.QuestionRepository;
 import com.readle.readlebackend.global.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
  * 기사 1건을 받아 (1) 난이도 1~5 판단, (2) 오늘의 학습 문제 10개, (3) 게임용 문제 10개를
- * 한 번의 Gemini 호출로 생성한다. 아직 저장(persist)은 하지 않고 확인용으로 결과만 반환한다.
+ * 한 번의 Gemini 호출로 생성하고, 생성된 문제들을 questions 테이블에 저장한다.
  */
 @Slf4j
 @Service
@@ -33,24 +39,76 @@ public class QuestionGenerationService {
     /** 대분류(main_category) 하나당 각 문제 세트(오늘의 학습/게임)에서 생성할 개수. 5개 카테고리 x 2개 = 세트당 10개. */
     private static final int QUESTIONS_PER_CATEGORY = 2;
 
+    /**
+     * TODO: 임시 값. 아직 News 저장 로직(Repository)이 없어서, 실제 기사가 존재한다고 가정하고
+     * 고정된 news_id로 문제를 저장한다. News 저장 기능이 생기면 실제 news_id로 교체해야 한다.
+     */
+    private static final Long TEMP_NEWS_ID = 1L;
+
     private final GeminiClient geminiClient;
     private final ObjectMapper objectMapper;
+    private final QuestionRepository questionRepository;
 
+    @Transactional
     public QuestionGenerationResult generate(QuestionGenerationRequest request) {
-        String prompt = buildPrompt(request);
+        String prompt = buildMakeQuestionPrompt(request);
         JsonNode schema = buildResponseSchema();
 
         String rawJson = geminiClient.generateJson(prompt, schema);
 
+        QuestionGenerationResult result;
         try {
-            return objectMapper.readValue(rawJson, QuestionGenerationResult.class);
+            result = objectMapper.readValue(rawJson, QuestionGenerationResult.class);
         } catch (IOException e) {
             log.error("Gemini 응답 JSON 파싱 실패. raw={}", rawJson, e);
             throw new CustomException(QuestionErrorCode.GEMINI_RESPONSE_PARSE_ERROR);
         }
+
+        saveQuestions(result);
+
+        return result;
     }
 
-    private String buildPrompt(QuestionGenerationRequest request) {
+    /** 생성된 dailyQuestions/gameQuestions를 Question 엔티티로 변환해서 저장한다. */
+    private void saveQuestions(QuestionGenerationResult result) {
+        List<Question> questions = new ArrayList<>();
+
+        for (GeneratedQuestionDto dto : result.dailyQuestions()) {
+            questions.add(toQuestionEntity(dto, GameMode.daily_solo, result.level()));
+        }
+        for (GeneratedQuestionDto dto : result.gameQuestions()) {
+            questions.add(toQuestionEntity(dto, GameMode.category_practice, result.level()));
+        }
+
+        questionRepository.saveAll(questions);
+        log.info("문제 {}개 저장 완료 (news_id={})", questions.size(), TEMP_NEWS_ID);
+    }
+
+    private Question toQuestionEntity(GeneratedQuestionDto dto, GameMode gameMode, Integer level) {
+        String choicesJson;
+        try {
+            choicesJson = objectMapper.writeValueAsString(dto.choices());
+        } catch (IOException e) {
+            log.error("choices 직렬화 실패", e);
+            throw new CustomException(QuestionErrorCode.GEMINI_RESPONSE_PARSE_ERROR);
+        }
+
+        return Question.builder()
+                .newsId(TEMP_NEWS_ID)
+                .content(dto.content())
+                .questionFormat(dto.questionFormat())
+                .choices(choicesJson)
+                .answer(dto.answer())
+                .explanation(dto.explanation())
+                .hint(dto.hint())
+                .gameMode(gameMode)
+                .mainCategory(dto.mainCategory())
+                .subCategory(dto.subCategory())
+                .level(level)
+                .build();
+    }
+
+    private String buildMakeQuestionPrompt(QuestionGenerationRequest request) {
         int totalPerSet = QUESTIONS_PER_CATEGORY * MainCategory.values().length;
 
         StringBuilder sb = new StringBuilder();
@@ -84,8 +142,27 @@ public class QuestionGenerationService {
                 .append("복잡한 추론보다는 문단에 직접 드러난 정보를 확인하는 수준으로 난이도를 낮춰라.\n");
         sb.append("- questionFormat은 난이도(level)와 상관없이 OX, multiple_choice, short_answer를 자유롭게 섞어서 사용해라.\n\n");
 
+        sb.append("[subCategory 설명 - 정확히 이 뜻에 맞는 것만 골라서 사용해라]\n");
+        sb.append("- vocab_appropriateness: 문맥상 특정 단어를 다른 단어로 바꿔도 어색하지 않은지, 즉 단어 사용의 적절성을 판단하는 문제\n");
+        sb.append("- vocab_meaning: 특정 단어/표현의 뜻(사전적 의미 또는 문맥적 의미)이 무엇인지 직접 묻는 문제\n");
+        sb.append("- vocab_paraphrase: 특정 표현을 의미가 같은 다른 말로 바꿔 쓰면 무엇인지 묻는 문제\n");
+        sb.append("- info_consistency: 주어진 진술이 지문 내용과 일치하는지/불일치하는지(사실 확인) 판단하는 문제\n");
+        sb.append("- info_evidence: 특정 주장이나 결론의 근거가 되는 문장/부분이 무엇인지 찾는 문제\n");
+        sb.append("- core_topic: 글이 '무엇에 대해' 다루고 있는지, 중심 소재/화제가 무엇인지 묻는 문제 (결론이 아니라 대상)\n");
+        sb.append("- core_title: 이 글에 어울리는 제목으로 가장 적절한 것을 고르는 문제\n");
+        sb.append("- core_gist: 글쓴이가 최종적으로 전달하려는 핵심 메시지/결론이 무엇인지 묻는 문제 (core_topic과 달리 '그래서 결론이 뭔지'에 초점)\n");
+        sb.append("- core_argument: 글쓴이나 등장인물의 주장/견해가 무엇인지 파악하는 문제\n");
+        sb.append("- inference_blank: 지문에 빈칸이 있다고 가정하고 그 빈칸에 들어갈 말을 문맥으로 추론하는 문제\n");
+        sb.append("- inference_implication: 특정 문장/표현에 직접 쓰이지 않은 함축적 의미나 의도를 추론하는 문제\n");
+        sb.append("- inference_continuation: 지문 뒤에 이어질 내용이 무엇일지 추론하는 문제\n");
+        sb.append("- structure_sentence_insertion: 주어진 문장 하나가 지문의 어느 위치에 들어가야 자연스러운지 찾는 문제\n");
+        sb.append("- structure_order: 문단이나 문장들을 논리적으로 올바른 순서로 배열하는 문제\n");
+        sb.append("- structure_irrelevant_sentence: 지문의 흐름과 관련 없는 문장을 찾아내는 문제\n\n");
+
         sb.append("[공통 규칙]\n");
-        sb.append("1. 각 문제의 subCategory는 mainCategory에 맞는 세부 유형 중 하나를 선택해라.\n");
+        sb.append("1. 각 문제의 subCategory는 mainCategory에 맞는 세부 유형 중, 위 설명에 정확히 부합하는 것만 골라라. ")
+                .append("설명과 안 맞는데 억지로 끼워맞추지 말고, 같은 mainCategory 안에서도 서로 다른 subCategory를 다양하게 써서 ")
+                .append("같은 세트(dailyQuestions 또는 gameQuestions) 안에 내용이 겹치는 문제가 나오지 않게 해라.\n");
         sb.append("2. questionFormat이 multiple_choice이면 choices에 보기 4개를 넣고, ")
                 .append("answer는 choices 중 하나와 글자까지 정확히 일치해야 한다. ")
                 .append("OX면 choices는 빈 배열로 두고 answer는 'O' 또는 'X'로 해라. ")
