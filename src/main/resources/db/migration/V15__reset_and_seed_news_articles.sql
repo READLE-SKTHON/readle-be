@@ -281,3 +281,4 @@ CREATE TABLE daily_representative_article (
     CONSTRAINT fk_daily_rep_article
     FOREIGN KEY (article_id) REFERENCES news_articles(news_id)
 );
+
