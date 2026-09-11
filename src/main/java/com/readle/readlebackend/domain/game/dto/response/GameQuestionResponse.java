@@ -1,6 +1,8 @@
 package com.readle.readlebackend.domain.game.dto.response;
 
+import com.readle.readlebackend.domain.question.enums.MainCategory;
 import com.readle.readlebackend.domain.question.enums.QuestionFormat;
+import com.readle.readlebackend.domain.question.enums.SubCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -26,4 +28,10 @@ public class GameQuestionResponse {
 
     @Schema(description = "보기 목록 (OX/단답형이면 빈 배열)")
     private List<String> choices;
+
+    @Schema(description = "대분류")
+    private MainCategory mainCategory;
+
+    @Schema(description = "소분류")
+    private SubCategory subCategory;
 }

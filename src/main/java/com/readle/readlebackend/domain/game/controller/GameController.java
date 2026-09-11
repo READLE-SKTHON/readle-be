@@ -1,6 +1,6 @@
 package com.readle.readlebackend.domain.game.controller;
 
-import com.readle.readlebackend.domain.game.dto.request.SubmitAnswerRequest;
+import com.readle.readlebackend.domain.game.dto.request.GameSubmitAnswerRequest;
 import com.readle.readlebackend.domain.game.dto.response.GameQuestionResponse;
 import com.readle.readlebackend.domain.game.dto.response.GameStatusResponse;
 import com.readle.readlebackend.domain.game.dto.response.StartGameResponse;
@@ -63,7 +63,7 @@ public class GameController {
             @CurrentUser Long userId,
             @PathVariable Long gameRoomId,
             @PathVariable Integer order,
-            @Valid @RequestBody SubmitAnswerRequest request
+            @Valid @RequestBody GameSubmitAnswerRequest request
     ) {
         SubmitAnswerResponse response = roomService.submitAnswer(userId, gameRoomId, order, request);
         return ResponseEntity.ok(BaseResponse.success("답안이 제출되었습니다.", response));
