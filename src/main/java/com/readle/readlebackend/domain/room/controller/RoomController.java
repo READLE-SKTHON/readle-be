@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/rooms")
 @RequiredArgsConstructor
-@Tag(name = "Room", description = "게임 방 API")
+@Tag(name = "Room", description = "게임 방(대기실) API")
 public class RoomController {
 
     private final RoomService roomService;

@@ -56,7 +56,7 @@ public class Question {
     @Column
     private String choices;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false)
     private String answer;
 
     @Column

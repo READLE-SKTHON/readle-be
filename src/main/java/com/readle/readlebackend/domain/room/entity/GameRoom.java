@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "game_rooms")
 @Getter
@@ -47,6 +49,9 @@ public class GameRoom extends BaseTimeEntity {
     @Column(nullable = false, columnDefinition = "room_difficulty_type")
     private Difficulty difficulty;
 
+    @Column(name = "started_at")
+    private LocalDateTime startedAt;
+
     @Builder
     public GameRoom(Long roomCode, String inviteLink, Category category,
                     Integer timer, Integer memberCount, Integer questionCount,
@@ -58,5 +63,14 @@ public class GameRoom extends BaseTimeEntity {
         this.memberCount = memberCount;
         this.questionCount = questionCount;
         this.difficulty = difficulty;
+    }
+
+    /** 게임을 시작 상태로 전환한다. 이미 시작된 방인지는 호출부(Service)에서 먼저 확인해야 한다. */
+    public void start() {
+        this.startedAt = LocalDateTime.now();
+    }
+
+    public boolean isStarted() {
+        return startedAt != null;
     }
 }
