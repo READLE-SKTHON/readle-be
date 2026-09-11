@@ -15,6 +15,8 @@ import com.readle.readlebackend.domain.question.enums.QuestionFormat;
 import com.readle.readlebackend.domain.question.repository.QuestionRepository;
 import com.readle.readlebackend.domain.training.dto.request.SubmitAnswerRequest;
 import com.readle.readlebackend.domain.training.dto.response.AnswerResultResponse;
+import com.readle.readlebackend.domain.training.dto.response.SkillResultDto;
+import com.readle.readlebackend.domain.training.dto.response.SkillResultResponse;
 import com.readle.readlebackend.domain.training.dto.response.SubmitAnswerResponse;
 import com.readle.readlebackend.domain.training.dto.response.TodayQuestionsResponse;
 import com.readle.readlebackend.domain.training.entity.Answer;
@@ -24,11 +26,13 @@ import com.readle.readlebackend.domain.training.enums.SkillCategory;
 import com.readle.readlebackend.domain.training.exception.AnswerErrorCode;
 import com.readle.readlebackend.domain.training.repository.AnswerEvaluationRepository;
 import com.readle.readlebackend.domain.training.repository.AnswerRepository;
+import com.readle.readlebackend.domain.training.repository.SkillCategoryAverageView;
 import com.readle.readlebackend.domain.user.entity.User;
 import com.readle.readlebackend.domain.user.repository.UserRepository;
 import com.readle.readlebackend.global.auth.AuthErrorCode;
 import com.readle.readlebackend.global.exception.CustomException;
 import com.readle.readlebackend.global.exception.GlobalErrorCode;
+import com.readle.readlebackend.global.util.VectorUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,7 +41,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -202,19 +208,8 @@ public class AnswerService {
 
         // DB 저장
         answerRepository.save(answer);
-
-        // 능력치별 평가 저장 (객관식은 skillScores가 없어서 건너뜀)
-        if (grading.skillScores() != null) {
-            for (SkillScoreDto skillScore : grading.skillScores()) {
-                answerEvaluationRepository.save(AnswerEvaluation.builder()
-                        .answer(answer)
-                        .user(user)
-                        .skillCategory(skillScore.skillCategory())
-                        .score(skillScore.score())
-                        .feedback(skillScore.feedback())
-                        .build());
-            }
-        }
+        // 능력치(5개 카테고리) 평가는 여기서 하지 않는다. 오늘 문제를 다 풀고 결과를 조회할 때(getAnswerResult)
+        // 임베딩 유사도를 참고 정보로 넣어서 한 번에 판단하고 저장한다 (evaluateSkillsIfAbsent 참고).
 
         // 로그 출력
         log.info("[AnswerService] 답안 제출 성공: userId={}, questionId={}, resultStatus={}", userId, questionId, grading.resultStatus());
@@ -241,12 +236,12 @@ public class AnswerService {
                 isCorrect ? ResultStatus.correct : ResultStatus.incorrect,
                 isCorrect ? 10 : 0,
                 isCorrect ? null : "정답을 다시 확인해보세요.",
-                isCorrect ? "정답이에요!" : "아쉽지만 오답이에요.",
-                null
+                isCorrect ? "정답이에요!" : "아쉽지만 오답이에요."
         );
     }
 
-    // O,X / short_answer 채점 — 근거 글을 Gemini에 보내 정오답 판정 + 5개 능력치 평가를 함께 받는다.
+    // O,X / short_answer 채점 — 근거 글을 Gemini에 보내 정오답 판정을 받는다.
+    // (능력치 평가는 여기서 안 하고, 오늘 문제를 다 풀고 결과 조회할 때 한 번에 처리한다 - evaluateSkillsIfAbsent 참고)
     private GradingResult gradeReasoningBased(Question question, SubmitAnswerRequest request) {
         String prompt = buildFeedbackPrompt(question, request.getSelectedAnswer(), request.getReason());
         JsonNode schema = buildFeedbackResponseSchema();
@@ -266,13 +261,12 @@ public class AnswerService {
                 result.resultStatus(),
                 result.overallScore(),
                 result.mistakeFeedback(),
-                result.feedback(),
-                result.skillScores()
+                result.feedback()
         );
     }
 
     // 채점 결과를 담는 내부 전용 타입
-    private record GradingResult(ResultStatus resultStatus, int score, String mistakeFeedback, String feedback, List<SkillScoreDto> skillScores) {
+    private record GradingResult(ResultStatus resultStatus, int score, String mistakeFeedback, String feedback) {
     }
 
     // OX/short_answer는 근거 작성 필요
@@ -284,9 +278,9 @@ public class AnswerService {
 
     /**
      * 문제와 정답 근거를 채점 기준으로 주고, 사용자가 제출한 답/근거 글을 보고
-     * (1) 정오답 판정(resultStatus), (2) 종합 점수(overallScore), (3) 전반 피드백,
-     * (4) 어휘력/독해력/추론력/비판적 사고력/표현력 5개 능력치 점수(0~100)+코멘트를
-     * 한 번에 생성하도록 요청하는 프롬프트. answer_evaluations/user_answers 테이블 구조에 맞춘 출력을 요구한다.
+     * (1) 정오답 판정(resultStatus), (2) 종합 점수(overallScore), (3) 전반 피드백을
+     * 한 번에 생성하도록 요청하는 프롬프트. user_answers 테이블 구조에 맞춘 출력을 요구한다.
+     * (능력치 5개 카테고리 평가는 여기서 하지 않는다 - buildSkillEvaluationPrompt 참고)
      */
     private String buildFeedbackPrompt(Question question, String selectedAnswer, String justification) {
         StringBuilder sb = new StringBuilder();
@@ -307,16 +301,12 @@ public class AnswerService {
         sb.append("overallScore(0~100): 정답 여부+근거 타당성 종합 점수\n");
         sb.append("mistakeFeedback: incorrect·insufficient_reasoning일 때만, 정답 근거를 인용해 무엇이 왜 틀렸는지를 담은 한 문장. correct면 빈 문자열\n");
         sb.append("feedback: 사용자가 쓴 답/근거 내용을 구체적으로 짚어 잘한 점 또는 보완점을 담은 한 문장, 격려 톤\n");
-        sb.append("skillScores(5개 필수, 각 0~100, 근거 글만 기준): ")
-                .append("vocab=단어 선택 정확성/문맥 적합성, reading=지문·문제 이해도, inference=비명시 내용의 논리적 추론, ")
-                .append("critical_thinking=논리 전개의 타당성, expression=명확하고 조리 있는 표현. ")
-                .append("단서 부족 시 feedback에 언급하고 중간 점수 부여\n");
-        sb.append("규칙: 정답 재안내 금지(제출 내용 기준 평가) / skillScores 5개 각 1회 / mistakeFeedback·feedback은 각각 정확히 한 문장(줄바꿈·나열 금지) / JSON 스키마만 출력, 그 외 텍스트 금지\n");
+        sb.append("규칙: 정답 재안내 금지(제출 내용 기준 평가) / mistakeFeedback·feedback은 각각 정확히 한 문장(줄바꿈·나열 금지) / JSON 스키마만 출력, 그 외 텍스트 금지\n");
 
         return sb.toString();
     }
 
-    /** buildFeedbackPrompt와 짝을 이루는 Gemini Structured Output 스키마. answer_evaluations/user_answers 테이블 구조에 맞춘다. */
+    /** buildFeedbackPrompt와 짝을 이루는 Gemini Structured Output 스키마. user_answers 테이블 구조에 맞춘다. */
     private JsonNode buildFeedbackResponseSchema() {
         ObjectNode root = objectMapper.createObjectNode();
         root.put("type", "OBJECT");
@@ -326,14 +316,12 @@ public class AnswerService {
         properties.set("overallScore", integerSchema());
         properties.set("mistakeFeedback", stringSchema());
         properties.set("feedback", stringSchema());
-        properties.set("skillScores", arrayOf(buildSkillScoreItemSchema()));
 
         ArrayNode required = root.putArray("required");
         required.add("resultStatus");
         required.add("overallScore");
         required.add("mistakeFeedback");
         required.add("feedback");
-        required.add("skillScores");
 
         return root;
     }
@@ -389,11 +377,11 @@ public class AnswerService {
             ResultStatus resultStatus,
             Integer overallScore,
             String mistakeFeedback,
-            String feedback,
-            List<SkillScoreDto> skillScores
+            String feedback
     ) {
     }
 
+    // 능력치(5개 카테고리) 평가 결과 - buildSkillEvaluationPrompt/evaluateSkillCategories에서 사용
     private record SkillScoreDto(SkillCategory skillCategory, Integer score, String feedback) {
     }
 
@@ -427,6 +415,13 @@ public class AnswerService {
             throw new CustomException(AnswerErrorCode.TODAY_NOT_COMPLETED);
         }
 
+        // 근거형(OX/short_answer) 문제 중 아직 능력치 평가가 없는 답안에 대해
+        // 임베딩 유사도를 참고 정보로 넣어 능력치(문자해독/내용이해/맥락파악/추론/비판적사고) 평가를 만들어 저장
+        evaluateSkillsIfAbsent(todayAnswers);
+
+        // 능력치 카테고리별 누적(전체 기간) 평균 점수 계산
+        List<SkillResultDto> skillResults = getSkillResults(userId);
+
         // 정답 수, 획득 경험치 집계
         int correctCount = 0;
         int earnedExp = 0;
@@ -452,6 +447,177 @@ public class AnswerService {
                 .correctCount(correctCount)
                 .accuracy(accuracy)
                 .earnedExp(earnedExp)
+                .skillResults(skillResults)
                 .build();
+    }
+
+    // 능력치(5개 카테고리) 누적 평균 점수만 단독으로 조회
+    public SkillResultResponse getSkillSummary(Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new CustomException(AuthErrorCode.INVALID_USER_ID);
+        }
+
+        List<SkillResultDto> skillResults = getSkillResults(userId);
+
+        return SkillResultResponse.builder()
+                .skillResults(skillResults)
+                .build();
+    }
+
+    // 유저의 능력치 카테고리별 누적(전체 기간) 평균 점수를 계산한다.
+    // (오늘 결과 조회, 능력치 단독 조회 API에서 공용으로 사용)
+    // 아직 평가된 적 없는 카테고리도 0점으로 채워서, 항상 5개 카테고리가 다 내려가도록 한다.
+    private List<SkillResultDto> getSkillResults(Long userId) {
+        List<SkillCategoryAverageView> skillAverages = answerEvaluationRepository.findAverageScoresByUserId(userId);
+
+        Map<SkillCategory, Integer> averageByCategory = new HashMap<>();
+        for (SkillCategoryAverageView view : skillAverages) {
+            averageByCategory.put(view.getSkillCategory(), (int) Math.round(view.getAvgScore()));
+        }
+
+        List<SkillResultDto> skillResults = new ArrayList<>();
+        for (SkillCategory category : SkillCategory.values()) {
+            skillResults.add(SkillResultDto.builder()
+                    .skillCategory(category)
+                    .averageScore(averageByCategory.getOrDefault(category, 0))
+                    .build());
+        }
+        return skillResults;
+    }
+
+    // ===== 능력치(5개 카테고리) 평가 — 임베딩 유사도 참고 + Gemini 판단, getAnswerResult에서만 수행 =====
+
+    /**
+     * 오늘 답안 중 근거형(OX/short_answer) 문제이고 아직 능력치 평가가 저장 안 된 것만 골라
+     * 능력치 평가를 만들어 저장한다. 이미 평가된 답안은 건너뛰어서, 결과 조회를 여러 번 호출해도
+     * 중복 저장/중복 Gemini 호출이 일어나지 않는다.
+     */
+    private void evaluateSkillsIfAbsent(List<Answer> todayAnswers) {
+        for (Answer answer : todayAnswers) {
+            Question question = answer.getQuestion();
+
+            if (!requiresReason(question.getQuestionFormat())) {
+                continue; // 객관식은 능력치 평가 대상이 아님
+            }
+            if (answerEvaluationRepository.existsByAnswerId(answer.getId())) {
+                continue; // 이미 평가됨
+            }
+
+            String explanation = question.getExplanation();
+            if (explanation == null || explanation.isBlank()) {
+                log.warn("[AnswerService] 정답 근거(explanation)가 없어 능력치 평가를 건너뜁니다: answerId={}", answer.getId());
+                continue;
+            }
+
+            String userEvidenceText = buildUserEvidenceText(question, answer.getSelectedAnswer(), answer.getJustification());
+            Double similarityPercent = computeSimilarityPercent(explanation, userEvidenceText);
+
+            List<SkillScoreDto> skillScores = evaluateSkillCategories(question, userEvidenceText, similarityPercent);
+            for (SkillScoreDto skillScore : skillScores) {
+                answerEvaluationRepository.save(AnswerEvaluation.builder()
+                        .answer(answer)
+                        .user(answer.getUser())
+                        .skillCategory(skillScore.skillCategory())
+                        .score(skillScore.score())
+                        .feedback(skillScore.feedback())
+                        .build());
+            }
+        }
+    }
+
+    /**
+     * 유사도 계산에 쓸 "사용자 쪽 텍스트"를 문제 유형에 맞게 구성한다.
+     * OX는 selectedAnswer가 "O"/"X" 한 글자뿐이라 의미 정보가 없어 근거(justification)만 쓰고,
+     * short_answer는 selectedAnswer 자체가 답변 본문이라 근거와 합쳐서 쓴다.
+     */
+    private String buildUserEvidenceText(Question question, String selectedAnswer, String justification) {
+        if (question.getQuestionFormat() == QuestionFormat.short_answer) {
+            return selectedAnswer + " " + justification;
+        }
+        return justification;
+    }
+
+    /**
+     * explanation(정답 근거)과 사용자 쪽 텍스트를 각각 임베딩해서 코사인 유사도(%)를 계산한다.
+     * 임베딩 API 호출이 실패해도 능력치 평가 자체는 막지 않도록 예외를 잡고 null을 반환한다(참고 정보 없이 진행).
+     */
+    private Double computeSimilarityPercent(String explanation, String userEvidenceText) {
+        try {
+            double[] explanationVector = geminiClient.embed(explanation);
+            double[] userVector = geminiClient.embed(userEvidenceText);
+            double similarity = VectorUtils.cosineSimilarity(explanationVector, userVector);
+            return Math.round(similarity * 1000) / 10.0; // 소수점 1자리 %
+        } catch (Exception e) {
+            log.warn("[AnswerService] 임베딩 유사도 계산 실패, 참고 정보 없이 능력치 평가를 진행합니다.", e);
+            return null;
+        }
+    }
+
+    // Gemini에게 능력치 5개 카테고리 판단을 요청하고 결과를 받아온다.
+    private List<SkillScoreDto> evaluateSkillCategories(Question question, String userEvidenceText, Double similarityPercent) {
+        String prompt = buildSkillEvaluationPrompt(question, userEvidenceText, similarityPercent);
+        JsonNode schema = buildSkillEvaluationSchema();
+
+        String rawJson = geminiClient.generateJson(prompt, schema, 0);
+        try {
+            SkillEvaluationResult result = objectMapper.readValue(rawJson, SkillEvaluationResult.class);
+            return result.skillScores();
+        } catch (IOException e) {
+            log.error("[AnswerService] 능력치 평가 응답 파싱 실패. raw={}", rawJson, e);
+            throw new CustomException(AnswerErrorCode.FEEDBACK_PARSE_ERROR);
+        }
+    }
+
+    /**
+     * 능력치 5개 카테고리(문자해독/내용이해/맥락파악/추론/비판적사고)를 판단하도록 요청하는 프롬프트.
+     * 임베딩 유사도가 있으면 참고 정보로 함께 넣는다. feedback은 나중에 학습 데이터로도 쓸 수 있도록
+     * 왜 그 점수를 줬는지 구체적인 평가 이유를 담도록 요구한다.
+     */
+    private String buildSkillEvaluationPrompt(Question question, String userEvidenceText, Double similarityPercent) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("너는 한국어 문해력 앱 Readle의 능력치 평가관이야. 아래 문제와 사용자가 작성한 답/근거를 보고 ")
+                .append("문자해독/내용이해/맥락파악/추론/비판적사고 5개 능력치를 평가해.\n\n");
+
+        sb.append("[문제]\n").append(question.getContent()).append("\n\n");
+        sb.append("[정답]\n").append(question.getAnswer()).append("\n\n");
+        sb.append("[정답 근거]\n").append(question.getExplanation()).append("\n\n");
+        sb.append("[사용자가 작성한 답/근거]\n").append(userEvidenceText).append("\n\n");
+
+        if (similarityPercent != null) {
+            sb.append("[참고] 사용자 답/근거와 정답 근거 사이의 의미적 유사도(임베딩 기반): ")
+                    .append(similarityPercent)
+                    .append("%. 이 수치는 참고용 보조 지표일 뿐이며, 최종 판단은 답/근거의 논리적 타당성을 기준으로 하세요.\n\n");
+        }
+
+        sb.append("skillScores(5개 필수, 각 0~100, 사용자가 작성한 답/근거 기준): ")
+                .append("문자해독=글자·어휘를 정확히 읽고 의미를 파악하는 기초 능력, ")
+                .append("내용이해=문장이나 글의 표면적 의미를 정확히 파악했는지, ")
+                .append("맥락파악=명시되지 않은 의미(함축·화자의 의도·문맥상 뉘앙스)를 이해했는지, ")
+                .append("추론=글에 드러나지 않은 내용을 논리적으로 추론했는지, ")
+                .append("비판적사고=글의 내용을 평가하고 자신의 생각과 연결하거나 비판적으로 받아들였는지. ")
+                .append("단서 부족 시 feedback에 언급하고 중간 점수 부여\n");
+        sb.append("feedback: 각 능력치마다 왜 이 점수를 줬는지 사용자의 답/근거 내용을 구체적으로 인용해 설명하는 한 문장. ")
+                .append("추후 학습(통계/모델 학습) 데이터로도 쓰이니 판단 이유를 분명하게 남길 것\n");
+        sb.append("규칙: skillScores 5개 각 1회 / feedback은 각각 정확히 한 문장(줄바꿈·나열 금지) / JSON 스키마만 출력, 그 외 텍스트 금지\n");
+
+        return sb.toString();
+    }
+
+    /** buildSkillEvaluationPrompt와 짝을 이루는 Gemini Structured Output 스키마. */
+    private JsonNode buildSkillEvaluationSchema() {
+        ObjectNode root = objectMapper.createObjectNode();
+        root.put("type", "OBJECT");
+
+        ObjectNode properties = root.putObject("properties");
+        properties.set("skillScores", arrayOf(buildSkillScoreItemSchema()));
+
+        ArrayNode required = root.putArray("required");
+        required.add("skillScores");
+
+        return root;
+    }
+
+    // Gemini 능력치 평가 응답 파싱용 내부 전용 타입 (buildSkillEvaluationSchema와 1:1 대응)
+    private record SkillEvaluationResult(List<SkillScoreDto> skillScores) {
     }
 }
