@@ -84,3 +84,4 @@ public class News {
         this.level = level;
     }
 }
+
