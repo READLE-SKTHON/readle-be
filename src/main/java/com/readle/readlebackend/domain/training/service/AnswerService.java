@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.readle.readlebackend.domain.news.entity.News;
+import com.readle.readlebackend.domain.news.repository.DailyRepresentativeArticleRepository;
 import com.readle.readlebackend.domain.news.repository.NewsRepository;
 import com.readle.readlebackend.domain.question.client.GeminiClient;
 import com.readle.readlebackend.domain.question.entity.Question;
@@ -35,7 +36,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,6 +48,7 @@ public class AnswerService {
     private final UserRepository userRepository;
     private final QuestionRepository questionRepository;
     private final NewsRepository newsRepository;
+    private final DailyRepresentativeArticleRepository dailyRepresentativeArticleRepository;
     private final AnswerRepository answerRepository;
     private final AnswerEvaluationRepository answerEvaluationRepository;
     private final ObjectMapper objectMapper;
@@ -121,11 +122,14 @@ public class AnswerService {
                 .build();
     }
 
-    // 오늘(00:00~24:00) 생성된, 특정 유저 레벨에 맞는 daily_solo 문제 조회
+    // 오늘 날짜의 daily_representative_article에서 해당 유저 레벨의 대표 기사를 찾고,
+    // 그 기사에 연결된 daily_solo 문제 전체를 조회한다. 오늘 그 레벨의 대표 기사가 아직 없으면 빈 리스트.
     private List<Question> findTodayQuestions(Long userLevel) {
-        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
-        LocalDateTime endOfDay = startOfDay.plusDays(1);
-        return questionRepository.findAllByGameModeAndLevelInAndCreatedAtBetween(GameMode.daily_solo, List.of(userLevel.intValue()), startOfDay, endOfDay);
+        LocalDate today = LocalDate.now();
+
+        return dailyRepresentativeArticleRepository.findByRepDateAndLevel(today, userLevel.intValue())
+                .map(representative -> questionRepository.findAllByNewsIdAndGameMode(representative.getArticleId(), GameMode.daily_solo))
+                .orElseGet(List::of);
     }
 
     // Question.choices(JSON 문자열)를 List<String>으로 파싱
@@ -372,7 +376,6 @@ public class AnswerService {
 
     private record SkillScoreDto(SkillCategory skillCategory, Integer score, String feedback) {
     }
-}
 
 
     // 오늘의 퀴즈 결과 조회

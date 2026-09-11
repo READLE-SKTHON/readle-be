@@ -28,5 +28,9 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
             List<Long> newsIds, GameMode gameMode, List<Integer> levels);
 
     // 오늘의 문제(daily_solo) 조회용 (특정 게임 모드 + 특정 레벨 + 오늘 생성된 것)
+    // 참고: AnswerService는 이제 daily_representative_article 기준(findAllByNewsIdAndGameMode)으로 조회하므로 미사용.
     List<Question> findAllByGameModeAndLevelInAndCreatedAtBetween(GameMode gameMode, List<Integer> levels, LocalDateTime start, LocalDateTime end);
+
+    // 오늘의 대표 기사(newsId)에 연결된 특정 게임 모드의 문제 전체 조회
+    List<Question> findAllByNewsIdAndGameMode(Long newsId, GameMode gameMode);
 }
