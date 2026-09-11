@@ -5,6 +5,7 @@ import com.readle.readlebackend.domain.user.entity.User;
 import com.readle.readlebackend.global.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -37,4 +38,13 @@ public class AnswerEvaluation extends BaseTimeEntity {
     private Integer score; // 점수
 
     private String feedback; // 코멘트
+
+    @Builder
+    private AnswerEvaluation(Answer answer, User user, SkillCategory skillCategory, Integer score, String feedback) {
+        this.answer = answer;
+        this.user = user;
+        this.skillCategory = skillCategory;
+        this.score = score;
+        this.feedback = feedback;
+    }
 }

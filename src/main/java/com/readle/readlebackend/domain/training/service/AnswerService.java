@@ -1,16 +1,26 @@
 package com.readle.readlebackend.domain.training.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.readle.readlebackend.domain.news.entity.News;
 import com.readle.readlebackend.domain.news.repository.NewsRepository;
+import com.readle.readlebackend.domain.question.client.GeminiClient;
 import com.readle.readlebackend.domain.question.entity.Question;
 import com.readle.readlebackend.domain.question.enums.GameMode;
 import com.readle.readlebackend.domain.question.enums.QuestionFormat;
 import com.readle.readlebackend.domain.question.repository.QuestionRepository;
+import com.readle.readlebackend.domain.training.dto.request.SubmitAnswerRequest;
+import com.readle.readlebackend.domain.training.dto.response.SubmitAnswerResponse;
 import com.readle.readlebackend.domain.training.dto.response.TodayQuestionsResponse;
 import com.readle.readlebackend.domain.training.entity.Answer;
+import com.readle.readlebackend.domain.training.entity.AnswerEvaluation;
+import com.readle.readlebackend.domain.training.enums.ResultStatus;
+import com.readle.readlebackend.domain.training.enums.SkillCategory;
 import com.readle.readlebackend.domain.training.exception.AnswerErrorCode;
+import com.readle.readlebackend.domain.training.repository.AnswerEvaluationRepository;
 import com.readle.readlebackend.domain.training.repository.AnswerRepository;
 import com.readle.readlebackend.domain.user.entity.User;
 import com.readle.readlebackend.domain.user.repository.UserRepository;
@@ -22,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -37,7 +48,9 @@ public class AnswerService {
     private final QuestionRepository questionRepository;
     private final NewsRepository newsRepository;
     private final AnswerRepository answerRepository;
+    private final AnswerEvaluationRepository answerEvaluationRepository;
     private final ObjectMapper objectMapper;
+    private final GeminiClient geminiClient;
 
     // 오늘의 문제 조회
     public TodayQuestionsResponse getTodayQuestions(Long userId) {
@@ -161,6 +174,19 @@ public class AnswerService {
         // DB 저장
         answerRepository.save(answer);
 
+        // 능력치별 평가 저장 (객관식은 skillScores가 없어서 건너뜀)
+        if (grading.skillScores() != null) {
+            for (SkillScoreDto skillScore : grading.skillScores()) {
+                answerEvaluationRepository.save(AnswerEvaluation.builder()
+                        .answer(answer)
+                        .user(user)
+                        .skillCategory(skillScore.skillCategory())
+                        .score(skillScore.score())
+                        .feedback(skillScore.feedback())
+                        .build());
+            }
+        }
+
         // 로그 출력
         log.info("[AnswerService] 답안 제출 성공: userId={}, questionId={}, resultStatus={}", userId, questionId, grading.resultStatus());
 
@@ -185,24 +211,37 @@ public class AnswerService {
                 isCorrect ? ResultStatus.correct : ResultStatus.incorrect,
                 isCorrect ? 10 : 0,
                 isCorrect ? null : "정답을 다시 확인해보세요.",
-                isCorrect ? "정답이에요!" : "아쉽지만 오답이에요."
+                isCorrect ? "정답이에요!" : "아쉽지만 오답이에요.",
+                null
         );
     }
 
-    // O,X / short_answer 채점
-    // TODO: AI 로직을 이용해 채점하는 방식으로 수정해야됨
+    // O,X / short_answer 채점 — 근거 글을 Gemini에 보내 정오답 판정 + 5개 능력치 평가를 함께 받는다.
     private GradingResult gradeReasoningBased(Question question, SubmitAnswerRequest request) {
-        boolean isCorrect = question.getAnswer().equals(request.getSelectedAnswer());
+        String prompt = buildFeedbackPrompt(question, request.getSelectedAnswer(), request.getReason());
+        JsonNode schema = buildFeedbackResponseSchema();
+
+        String rawJson = geminiClient.generateJson(prompt, schema);
+
+        FeedbackResult result;
+        try {
+            result = objectMapper.readValue(rawJson, FeedbackResult.class);
+        } catch (IOException e) {
+            log.error("[AnswerService] AI 피드백 응답 파싱 실패. raw={}", rawJson, e);
+            throw new CustomException(AnswerErrorCode.FEEDBACK_PARSE_ERROR);
+        }
+
         return new GradingResult(
-                isCorrect ? ResultStatus.correct : ResultStatus.incorrect,
-                isCorrect ? 10 : 0,
-                isCorrect ? null : "정답을 다시 확인해보세요.",
-                isCorrect ? "정답이에요!" : "아쉽지만 오답이에요."
+                result.resultStatus(),
+                result.overallScore(),
+                result.mistakeFeedback(),
+                result.feedback(),
+                result.skillScores()
         );
     }
 
-    // TODO: 채점 결과를 담는 내부 전용 타입 (AI 담당자가 gradeReasoningBased만 교체하면 되도록 시그니처 고정)
-    private record GradingResult(ResultStatus resultStatus, int score, String mistakeFeedback, String feedback) {
+    // 채점 결과를 담는 내부 전용 타입
+    private record GradingResult(ResultStatus resultStatus, int score, String mistakeFeedback, String feedback, List<SkillScoreDto> skillScores) {
     }
 
     // OX/short_answer는 근거 작성 필요
@@ -332,5 +371,18 @@ public class AnswerService {
         ObjectNode node = objectMapper.createObjectNode();
         node.put("type", "INTEGER");
         return node;
+    }
+
+    // Gemini 피드백 응답 파싱용 내부 전용 타입 (buildFeedbackResponseSchema와 1:1 대응)
+    private record FeedbackResult(
+            ResultStatus resultStatus,
+            Integer overallScore,
+            String mistakeFeedback,
+            String feedback,
+            List<SkillScoreDto> skillScores
+    ) {
+    }
+
+    private record SkillScoreDto(SkillCategory skillCategory, Integer score, String feedback) {
     }
 }
