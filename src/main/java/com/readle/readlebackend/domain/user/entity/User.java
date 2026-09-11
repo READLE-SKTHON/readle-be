@@ -1,5 +1,6 @@
 package com.readle.readlebackend.domain.user.entity;
 
+import com.readle.readlebackend.global.common.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -16,14 +17,14 @@ import java.time.LocalDateTime;
 /**
  * {@code users} 테이블 매핑 엔티티. 스키마는 Flyway {@code V1__init.sql} 기준.
  *
- * <p>{@code created_at} / {@code updated_at} 은 DB 기본값(now())에 맡기므로
- * insert/update 대상에서 제외한다.
+ * <p>{@code created_at} / {@code updated_at} 은 {@link BaseTimeEntity} 의
+ * JPA Auditing 이 채운다.
  */
 @Entity
 @Table(name = "users")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class User {
+public class User extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,21 +41,19 @@ public class User {
     @Column(name = "school_id")
     private Long schoolId;
 
-    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
-    private LocalDateTime updatedAt;
-
     private Long level;
 
     private Integer xp;
 
+    @Column(name = "last_activity_date")
     private LocalDate lastActivityDate;
 
-    private Long currentStreak;
+    @Column(name = "current_streak", nullable = false)
+    private Long currentStreak = 0L;
 
+    @Column(name = "answer_rate")
     private Long answerRate;
 
+    @Column(name = "news_read_count")
     private Integer newsReadCount;
 }
