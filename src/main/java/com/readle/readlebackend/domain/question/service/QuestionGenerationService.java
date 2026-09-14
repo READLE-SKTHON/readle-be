@@ -17,6 +17,7 @@ import com.readle.readlebackend.domain.question.enums.QuestionFormat;
 import com.readle.readlebackend.domain.question.enums.SubCategory;
 import com.readle.readlebackend.domain.question.exception.QuestionErrorCode;
 import com.readle.readlebackend.domain.question.repository.QuestionRepository;
+import com.readle.readlebackend.domain.news.enums.NewsCategory;
 import com.readle.readlebackend.global.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -73,7 +74,7 @@ public class QuestionGenerationService {
         news.updateLevel(result.level());
         newsRepository.save(news);
 
-        saveQuestions(result, news.getId());
+        saveQuestions(result, news.getId(), news.getCategory());
 
         long completedCount = questionRepository.countDistinctNewsId();
         long totalCount = newsRepository.count();
@@ -84,21 +85,22 @@ public class QuestionGenerationService {
     }
 
     /** 생성된 dailyQuestions/gameQuestions를 Question 엔티티로 변환해서 저장한다. */
-    private void saveQuestions(QuestionGenerationResult result, Long newsId) {
+    private void saveQuestions(QuestionGenerationResult result, Long newsId, NewsCategory newsCategory) {
         List<Question> questions = new ArrayList<>();
 
         for (GeneratedQuestionDto dto : result.dailyQuestions()) {
-            questions.add(toQuestionEntity(dto, GameMode.daily_solo, result.level(), newsId));
+            questions.add(toQuestionEntity(dto, GameMode.daily_solo, result.level(), newsId, newsCategory));
         }
         for (GeneratedQuestionDto dto : result.gameQuestions()) {
-            questions.add(toQuestionEntity(dto, GameMode.room, result.level(), newsId));
+            questions.add(toQuestionEntity(dto, GameMode.room, result.level(), newsId, newsCategory));
         }
 
         questionRepository.saveAll(questions);
         log.info("문제 {}개 저장 완료 (news_id={})", questions.size(), newsId);
     }
 
-    private Question toQuestionEntity(GeneratedQuestionDto dto, GameMode gameMode, Integer level, Long newsId) {
+    private Question toQuestionEntity(GeneratedQuestionDto dto, GameMode gameMode, Integer level, Long newsId,
+                                       NewsCategory newsCategory) {
         String choicesJson;
         try {
             choicesJson = objectMapper.writeValueAsString(dto.choices());
@@ -119,6 +121,7 @@ public class QuestionGenerationService {
                 .mainCategory(dto.mainCategory())
                 .subCategory(dto.subCategory())
                 .level(level)
+                .newsCategory(newsCategory)
                 .build();
     }
 

@@ -16,9 +16,7 @@ import com.readle.readlebackend.domain.game.entity.GameRoomQuestion;
 import com.readle.readlebackend.domain.game.enums.GamePhase;
 import com.readle.readlebackend.domain.game.repository.GameRoomAnswerRepository;
 import com.readle.readlebackend.domain.game.repository.GameRoomQuestionRepository;
-import com.readle.readlebackend.domain.news.entity.News;
 import com.readle.readlebackend.domain.news.enums.NewsCategory;
-import com.readle.readlebackend.domain.news.repository.NewsRepository;
 import com.readle.readlebackend.domain.question.entity.Question;
 import com.readle.readlebackend.domain.question.enums.GameMode;
 import com.readle.readlebackend.domain.question.enums.QuestionFormat;
@@ -78,7 +76,6 @@ public class RoomService {
     private final GameRoomQuestionRepository gameRoomQuestionRepository;
     private final GameRoomAnswerRepository gameRoomAnswerRepository;
     private final UserRepository userRepository;
-    private final NewsRepository newsRepository;
     private final QuestionRepository questionRepository;
     private final ObjectMapper objectMapper;
 
@@ -615,29 +612,17 @@ public class RoomService {
                 .collect(Collectors.toMap(User::getId, User::getNickname));
     }
 
-    /** 방 category(전체 포함)/difficulty(레벨 범위)에 맞는 게임용 문제 후보를 조회한다. 판이 바뀌어도 재사용 가능하다. */
+    /** 방 category(전체 포함)/difficulty(레벨 범위)에 맞는 게임용 문제 후보를 조회한다. 판이 바뀌어도 재사용 가능하다.
+     * questions.category(newsCategory)를 직접 필터링하므로 news_articles 조인이 필요 없다. */
     private List<Question> findEligibleQuestions(Category category, Difficulty difficulty) {
         List<Integer> levels = levelsFor(difficulty);
 
-        List<Question> pool;
         if (category == Category.전체) {
-            pool = questionRepository.findAllByGameModeAndLevelIn(ROOM_GAME_MODE, levels);
-        } else {
-            // TODO: room.enums.Category 와 news.enums.NewsCategory 가 값이 같은 별개 enum이라 이름으로 변환한다.
-            // 둘을 하나로 합치면 이 변환은 필요 없어진다.
-            NewsCategory newsCategory = NewsCategory.valueOf(category.name());
-            List<Long> newsIds = newsRepository.findAllByCategory(newsCategory).stream()
-                    .map(News::getId)
-                    .toList();
-
-            if (newsIds.isEmpty()) {
-                return List.of();
-            }
-
-            pool = questionRepository.findAllByNewsIdInAndGameModeAndLevelIn(newsIds, ROOM_GAME_MODE, levels);
+            return questionRepository.findAllByGameModeAndLevelIn(ROOM_GAME_MODE, levels);
         }
-
-        return pool;
+        // room.enums.Category 와 news.enums.NewsCategory 는 값은 같지만 별개 enum이라 이름으로 변환해서 조회한다.
+        NewsCategory newsCategory = NewsCategory.valueOf(category.name());
+        return questionRepository.findAllByNewsCategoryAndGameModeAndLevelIn(newsCategory, ROOM_GAME_MODE, levels);
     }
 
     /** 난이도 → News/Question level(1~5) 매핑. 하=1,2 / 중=3,4 / 상=5 / 랜덤=1~5. */

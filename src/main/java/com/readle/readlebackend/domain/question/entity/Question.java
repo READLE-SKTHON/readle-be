@@ -4,6 +4,7 @@ import com.readle.readlebackend.domain.question.enums.GameMode;
 import com.readle.readlebackend.domain.question.enums.MainCategory;
 import com.readle.readlebackend.domain.question.enums.QuestionFormat;
 import com.readle.readlebackend.domain.question.enums.SubCategory;
+import com.readle.readlebackend.domain.news.enums.NewsCategory;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -86,10 +87,20 @@ public class Question {
     @Column(nullable = false)
     private Integer level;
 
+    /** 이 문제가 속한 기사의 뉴스 카테고리(전체/경제/사회/세계/과학IT/생활문화).
+     * news_articles.category 를 그대로 복사해둔 값으로, 카테고리별로 문제를 조회할 때
+     * news_articles 조인 없이 바로 필터링하기 위해 둔다.
+     * (문제 유형 분류인 mainCategory/subCategory와는 다른 개념이라 이름을 구분했다.) */
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "category", nullable = false, columnDefinition = "news_category_type")
+    private NewsCategory newsCategory;
+
     @Builder
     private Question(Long newsId, String content, QuestionFormat questionFormat, String choices,
                       String answer, String explanation, String hint, GameMode gameMode,
-                      MainCategory mainCategory, SubCategory subCategory, Integer level) {
+                      MainCategory mainCategory, SubCategory subCategory, Integer level,
+                      NewsCategory newsCategory) {
         this.newsId = newsId;
         this.content = content;
         this.questionFormat = questionFormat;
@@ -101,5 +112,6 @@ public class Question {
         this.mainCategory = mainCategory;
         this.subCategory = subCategory;
         this.level = level;
+        this.newsCategory = newsCategory;
     }
 }
