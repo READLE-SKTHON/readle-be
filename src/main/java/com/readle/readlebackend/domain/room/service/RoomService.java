@@ -135,6 +135,36 @@ public class RoomService {
     }
 
     /**
+     * 방에서 나간다. 방장이 아니면 자신의 참여 기록만 지우고 방은 그대로 유지된다.
+     * 방장이 나가면 방 전체가 종료된 것으로 보고, 그 방의 데이터(답안/문제 배정/참여자/방)를
+     * 전부 지운다 — 그 시점부터 다른 참여자들이 이 방을 조회하면 {@link RoomErrorCode#ROOM_NOT_FOUND}를 받게 된다.
+     */
+    @Transactional
+    public void leaveRoom(Long userId, Long roomId) {
+        GameRoom room = gameRoomRepository.findById(roomId)
+                .orElseThrow(() -> new CustomException(RoomErrorCode.ROOM_NOT_FOUND));
+
+        RoomParticipant participant = roomParticipantRepository.findByRoomIdAndUserId(roomId, userId)
+                .orElseThrow(() -> new CustomException(RoomErrorCode.NOT_ROOM_PARTICIPANT));
+
+        if (Boolean.TRUE.equals(participant.getIsHost())) {
+            deleteRoomCompletely(room);
+        } else {
+            roomParticipantRepository.delete(participant);
+        }
+    }
+
+    /** 방장이 나가서 방을 통째로 종료할 때 호출한다. FK 제약 때문에 자식 테이블부터 순서대로 지운다:
+     * 답안(game_room_answers) -> 문제 배정(game_room_questions) -> 참여자(room_participants) -> 방(game_rooms). */
+    private void deleteRoomCompletely(GameRoom room) {
+        Long roomId = room.getId();
+        gameRoomAnswerRepository.deleteAllByRoomId(roomId);
+        gameRoomQuestionRepository.deleteAllByRoomId(roomId);
+        roomParticipantRepository.deleteAllByRoomId(roomId);
+        gameRoomRepository.delete(room);
+    }
+
+    /**
      * 대기방 참여자 목록을 조회한다. 프론트에서 폴링으로 주기 호출하는 용도.
      */
     public RoomParticipantsResponse getParticipants(Long userId, Long roomId) {
