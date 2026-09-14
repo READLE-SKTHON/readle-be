@@ -12,4 +12,7 @@ public interface RoomParticipantRepository extends JpaRepository<RoomParticipant
     Optional<RoomParticipant> findByRoomIdAndUserId(Long roomId, Long userId);
     boolean existsByRoomIdAndUserId(Long roomId, Long userId);
     int countByRoomId(Long roomId);
+
+    /** 방장이 나가서 방을 통째로 종료할 때, 이 방의 참여자 전원을 한 번에 지운다. */
+    void deleteAllByRoomId(Long roomId);
 }

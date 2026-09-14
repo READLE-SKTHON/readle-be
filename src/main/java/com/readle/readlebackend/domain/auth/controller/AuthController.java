@@ -35,4 +35,13 @@ public class AuthController {
         LoginResponse response = authService.loginByNickname(request.getNickname(), request.getSchoolName());
         return ResponseEntity.ok(BaseResponse.success("로그인되었습니다.", response));
     }
+
+    // 임시 로그아웃 api
+    @PostMapping("/logout")
+    @Operation(summary = "로그아웃", description = "해커톤용 임시 인증이라 서버에 별도로 무효화할 토큰/세션이 없습니다. "
+            + "실제 로그아웃 처리는 클라이언트가 저장해둔 userId(X-USER-ID)를 삭제하는 것으로 이루어지며, "
+            + "이 API는 프론트엔드의 일관된 인증 흐름을 위한 형식적인 엔드포인트입니다.")
+    public ResponseEntity<BaseResponse<Void>> logout() {
+        return ResponseEntity.ok(BaseResponse.success("로그아웃되었습니다.", null));
+    }
 }

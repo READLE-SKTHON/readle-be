@@ -25,4 +25,7 @@ public interface GameRoomQuestionRepository extends JpaRepository<GameRoomQuesti
     @Query("select q from GameRoomQuestion q where q.roomId = :roomId and q.round = :round and q.displayOrder = :displayOrder")
     Optional<GameRoomQuestion> findByRoomIdAndRoundAndDisplayOrderForUpdate(
             @Param("roomId") Long roomId, @Param("round") Integer round, @Param("displayOrder") Integer displayOrder);
+
+    /** 방장이 나가서 방을 통째로 종료할 때, 이 방의 모든 라운드 문제 배정을 한 번에 지운다. */
+    void deleteAllByRoomId(Long roomId);
 }

@@ -3,6 +3,7 @@ package com.readle.readlebackend.domain.question.repository;
 import com.readle.readlebackend.domain.question.entity.Question;
 import com.readle.readlebackend.domain.question.enums.GameMode;
 import com.readle.readlebackend.domain.question.enums.SubCategory;
+import com.readle.readlebackend.domain.news.enums.NewsCategory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -23,6 +24,11 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
 
     /** 카테고리 제한 없이(방 category = 전체) 게임 모드/레벨로만 후보를 뽑을 때 사용. */
     List<Question> findAllByGameModeAndLevelIn(GameMode gameMode, List<Integer> levels);
+
+    /** 특정 뉴스 카테고리 + 게임 모드/레벨로 후보를 뽑을 때 사용.
+     * questions.category(newsCategory)를 직접 필터링하므로 news_articles 조인이 필요 없다. */
+    List<Question> findAllByNewsCategoryAndGameModeAndLevelIn(
+            NewsCategory newsCategory, GameMode gameMode, List<Integer> levels);
 
     /** 특정 뉴스 카테고리(News.newsId 목록)로 제한해서 후보를 뽑을 때 사용. */
     List<Question> findAllByNewsIdInAndGameModeAndLevelIn(

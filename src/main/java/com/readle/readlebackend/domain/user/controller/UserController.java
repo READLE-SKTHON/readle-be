@@ -47,4 +47,5 @@ public class UserController {
         // 응답 반환
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(200, "학교별 랭킹 조회 성공", response));
     }
+
 }

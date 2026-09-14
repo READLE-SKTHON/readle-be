@@ -41,6 +41,18 @@ public class RoomController {
         return ResponseEntity.ok(BaseResponse.success("방에 참가했습니다.", response));
     }
 
+    @PostMapping("/{roomId}/leave")
+    @Operation(summary = "방 나가기", description = "게임 방에서 나갑니다. 방장이 아닌 참여자가 나가면 본인만 방에서 빠지고 방은 유지됩니다. "
+            + "방장이 나가면 방이 통째로 종료되며, 그 방의 참여자/문제 배정/답안 데이터가 모두 삭제됩니다. "
+            + "이후 다른 참여자가 이 방을 조회하면 방을 찾을 수 없다는 응답을 받게 됩니다.")
+    public ResponseEntity<BaseResponse<Void>> leaveRoom(
+            @CurrentUser Long userId,
+            @PathVariable Long roomId
+    ) {
+        roomService.leaveRoom(userId, roomId);
+        return ResponseEntity.ok(BaseResponse.success("방에서 나갔습니다.", null));
+    }
+
     @GetMapping("/{roomId}/participants")
     @Operation(summary = "참여자 목록 조회", description = "대기방 참여자 목록을 조회합니다. 해당 방 참여자만 조회 가능하며, 프론트에서 폴링으로 반복 호출합니다.")
     public ResponseEntity<BaseResponse<RoomParticipantsResponse>> getParticipants(
