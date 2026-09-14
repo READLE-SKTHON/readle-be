@@ -102,6 +102,7 @@ class RoomServiceConcurrencyTest {
                     .mainCategory(MainCategory.vocab)
                     .subCategory(SubCategory.vocab_meaning)
                     .level(1)
+                    .newsCategory(news.getCategory())
                     .build());
         }
 
@@ -180,6 +181,7 @@ class RoomServiceConcurrencyTest {
                 .mainCategory(MainCategory.vocab)
                 .subCategory(SubCategory.vocab_meaning)
                 .level(1)
+                .newsCategory(news.getCategory())
                 .build());
 
         GameRoom room = gameRoomRepository.save(GameRoom.builder()
@@ -278,6 +280,7 @@ class RoomServiceConcurrencyTest {
                 .mainCategory(MainCategory.vocab)
                 .subCategory(SubCategory.vocab_meaning)
                 .level(1)
+                .newsCategory(news.getCategory())
                 .build());
 
         // 타이머를 최소로 둬서(1초) 판이 금방 끝나게 한다. (@AllowedIntValues 는 DTO 검증이라 엔티티 직접 생성엔 안 걸림)
@@ -333,6 +336,7 @@ class RoomServiceConcurrencyTest {
                 .mainCategory(MainCategory.vocab)
                 .subCategory(SubCategory.vocab_meaning)
                 .level(1)
+                .newsCategory(news.getCategory())
                 .build());
 
         // 타이머를 길게 둬서, 조기 공개 로직이 없다면 절대 REVEAL로 안 넘어갈 정도로 여유를 둔다.
