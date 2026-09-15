@@ -31,7 +31,8 @@ public class User extends BaseTimeEntity {
     @Column(name = "user_id")
     private Long id;
 
-    @Column(nullable = false, length = 50)
+    // 닉네임 기반 친구 추가 기능을 위해 유니크 제약을 건다 (V27).
+    @Column(nullable = false, unique = true, length = 50)
     private String nickname;
 
     private LocalDateTime birth;
