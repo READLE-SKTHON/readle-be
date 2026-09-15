@@ -21,8 +21,7 @@ public class HomeController {
     private final HomeService homeService;
 
     @GetMapping
-    @Operation(summary = "홈 화면 조회", description = "닉네임/레벨/경험치/연속 학습일/읽은 뉴스 수/평균 정답률과 "
-            + "오늘의 뉴스 1건을 반환합니다.")
+    @Operation(summary = "홈 화면 조회", description = "닉네임/레벨/경험치/연속 학습일/읽은 뉴스 수/평균 정답률을 반환합니다.")
     public ResponseEntity<BaseResponse<HomeResponse>> getHome(@CurrentUser Long userId) {
         HomeResponse response = homeService.getHome(userId);
         return ResponseEntity.ok(BaseResponse.success(response));
