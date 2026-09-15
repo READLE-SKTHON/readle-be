@@ -4,6 +4,7 @@ import com.readle.readlebackend.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
@@ -11,4 +12,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // xp 내림차순으로 전체 유저 조회 (전체 랭킹 조회용)
     List<User> findAllByOrderByXpDesc();
+
+    // xp 내림차순으로 특정 id들만 조회 (친구 랭킹 조회용)
+    List<User> findByIdInOrderByXpDesc(Set<Long> ids);
 }

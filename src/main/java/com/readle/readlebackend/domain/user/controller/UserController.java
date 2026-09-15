@@ -1,6 +1,7 @@
 package com.readle.readlebackend.domain.user.controller;
 
 import com.readle.readlebackend.domain.user.dto.response.AllRankingResponse;
+import com.readle.readlebackend.domain.user.dto.response.FriendRankingResponse;
 import com.readle.readlebackend.domain.user.dto.response.SchoolRankingResponse;
 import com.readle.readlebackend.domain.user.service.UserService;
 import com.readle.readlebackend.global.auth.CurrentUser;
@@ -48,4 +49,16 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(200, "학교별 랭킹 조회 성공", response));
     }
 
+    // 친구 랭킹 조회
+    @Operation(summary = "친구 랭킹 조회 API", description = "나 + 내 친구들 중 상위 7명 + (7등 밖이면) 내 순위를 조회하는 API")
+    @GetMapping("/ranking/friends")
+    public ResponseEntity<BaseResponse<FriendRankingResponse>> getFriendRanking(
+            @CurrentUser Long userId) {
+
+        // service 호출
+        FriendRankingResponse response = userService.getFriendRanking(userId);
+
+        // 응답 반환
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(200, "친구 랭킹 조회 성공", response));
+    }
 }

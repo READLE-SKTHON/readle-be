@@ -3,9 +3,12 @@ package com.readle.readlebackend.domain.user.service;
 import com.readle.readlebackend.domain.school.entity.School;
 import com.readle.readlebackend.domain.school.repository.SchoolRepository;
 import com.readle.readlebackend.domain.user.dto.response.AllRankingResponse;
+import com.readle.readlebackend.domain.user.dto.response.FriendRankingResponse;
 import com.readle.readlebackend.domain.user.dto.response.SchoolRankingResponse;
+import com.readle.readlebackend.domain.user.entity.Friend;
 import com.readle.readlebackend.domain.user.entity.User;
 import com.readle.readlebackend.domain.user.exception.UserErrorCode;
+import com.readle.readlebackend.domain.user.repository.FriendRepository;
 import com.readle.readlebackend.domain.user.repository.UserRepository;
 import com.readle.readlebackend.global.auth.AuthErrorCode;
 import com.readle.readlebackend.global.exception.CustomException;
@@ -14,10 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +27,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final SchoolRepository schoolRepository;
+    private final FriendRepository friendRepository;
 
     // 전체 랭킹 조회 (상위 7명 + 7등 밖일 때만 내 순위)
     public AllRankingResponse getAllRanking(Long userId) {
@@ -131,6 +132,67 @@ public class UserService {
 
         // 응답 세팅
         return SchoolRankingResponse.builder()
+                .rankings(rankings)
+                .myRank(myRank)
+                .build();
+    }
+
+    // 친구별 랭킹 조회
+    public FriendRankingResponse getFriendRanking(Long userId) {
+
+        // 내가 추가한 친구 id 목록 조회
+        List<Friend> friends = friendRepository.findByUserId(userId);
+
+        // 나 + 친구들을 한 번에 조회
+        Set<Long> targetUserIds = new HashSet<>();
+        targetUserIds.add(userId);
+        for (Friend friend : friends) {
+            targetUserIds.add(friend.getAddedUserId());
+        }
+        // xp 내림차순으로 조회
+        List<User> targetUsers = userRepository.findByIdInOrderByXpDesc(targetUserIds);
+
+        // 랭킹 목록(상위 7명) + 내 순위 계산 (7등 밖일 때만 myRank 표시)
+        List<FriendRankingResponse.RankingItem> rankings = new ArrayList<>();
+        FriendRankingResponse.RankingItem myRank = null;
+        boolean userFound = false;
+
+        int rank = 1;
+        for (User target : targetUsers) {
+            // 현재 등수/닉네임/xp로 랭킹 항목 생성
+            FriendRankingResponse.RankingItem item = FriendRankingResponse.RankingItem.builder()
+                    .rank(rank)
+                    .nickname(target.getNickname())
+                    .xp(target.getXp())
+                    .build();
+
+            // 7등 이내면 상위 랭킹 목록에 추가
+            if (rank <= 7) {
+                rankings.add(item);
+            }
+
+            // 7등 이내면 이미 rankings에 표시되고 7등 밖일 때만 myRank에 저장
+            if (target.getId().equals(userId)) {
+                userFound = true;
+                if (rank > 7) {
+                    myRank = item;
+                }
+            }
+            rank++;
+        }
+
+        // 요청한 유저가 존재하는지 확인
+        if (!userFound) {
+            log.warn("[UserService] 친구 랭킹 조회 실패, 존재하지 않는 유저: userId={}", userId);
+            throw new CustomException(AuthErrorCode.INVALID_USER_ID);
+        }
+
+        // 로그 출력
+        log.info("[UserService] 친구 랭킹 조회 성공: userId={}, friendCount={}, myRank={}",
+                userId, friends.size(), myRank != null ? myRank.getRank() : null);
+
+        // 응답 세팅
+        return FriendRankingResponse.builder()
                 .rankings(rankings)
                 .myRank(myRank)
                 .build();
