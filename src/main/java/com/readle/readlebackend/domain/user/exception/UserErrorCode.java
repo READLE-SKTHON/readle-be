@@ -10,7 +10,9 @@ import org.springframework.http.HttpStatus;
 public enum UserErrorCode implements BaseErrorCode {
 
     NO_SCHOOL_ASSIGNED("U001", "소속된 학교가 없습니다.", HttpStatus.BAD_REQUEST),
-    USER_NOT_FOUND("U002", "존재하지 않는 유저입니다.", HttpStatus.NOT_FOUND);
+    USER_NOT_FOUND("U002", "존재하지 않는 유저입니다.", HttpStatus.NOT_FOUND),
+    SELF_FRIEND_NOT_ALLOWED("U003", "자기 자신은 친구로 추가할 수 없습니다.", HttpStatus.BAD_REQUEST),
+    ALREADY_FRIEND("U004", "이미 추가된 친구입니다.", HttpStatus.CONFLICT);
 
     private final String code;
     private final String message;
