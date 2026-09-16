@@ -1,64 +1,66 @@
 package com.readle.readlebackend.domain.user.controller;
 
-import com.readle.readlebackend.domain.user.dto.response.AllRankingResponse;
-import com.readle.readlebackend.domain.user.dto.response.FriendRankingResponse;
-import com.readle.readlebackend.domain.user.dto.response.SchoolRankingResponse;
+import com.readle.readlebackend.domain.user.dto.request.AddFriendRequest;
+import com.readle.readlebackend.domain.user.dto.response.*;
 import com.readle.readlebackend.domain.user.service.UserService;
 import com.readle.readlebackend.global.auth.CurrentUser;
 import com.readle.readlebackend.global.common.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
-@Tag(name = "Ranking", description = "랭킹 관련 API")
+@Tag(name = "User", description = "사용자 관련 API")
 public class UserController {
 
     private final UserService userService;
 
-    // 전체 사용자 랭킹 조회
-    @Operation(summary = "전체 랭킹 조회 API", description = "상위 7명 + (7등 밖이면) 내 순위를 조회하는 API")
-    @GetMapping("/ranking/all")
-    public ResponseEntity<BaseResponse<AllRankingResponse>> getAllRanking(
-            @CurrentUser Long userId) {
+    // 닉네임으로 친구 검색
+    @Operation(summary = "닉네임 친구 검색 API", description = "닉네임을 검색하는 API")
+    @GetMapping("/friends/search")
+    public ResponseEntity<BaseResponse<FriendSearchResponse>> searchFriend(
+            @CurrentUser Long userId,
+            @RequestParam String nickname) {
 
         // service 호출
-        AllRankingResponse response = userService.getAllRanking(userId);
+        FriendSearchResponse response = userService.searchFriends(userId, nickname);
 
         // 응답 반환
-        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(200, "전체 랭킹 조회 성공", response));
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(200, "닉네임 친구 검색 성공", response));
     }
 
-    // 학교별 랭킹 조회
-    @Operation(summary = "학교별 랭킹 조회 API", description = "소속 학생 xp 평균 기준 상위 7개교 + 내 학교 순위를 조회하는 API")
-    @GetMapping("/ranking/school")
-    public ResponseEntity<BaseResponse<SchoolRankingResponse>> getSchoolRanking(
-            @CurrentUser Long userId) {
+    // 친구 추가
+    @Operation(summary = "친구 추가 API", description = "닉네임으로 친구 추가하는 API")
+    @PostMapping("/friends")
+    public ResponseEntity<BaseResponse<AddFriendResponse>> addFriend(
+            @CurrentUser Long userId,
+            @Valid @RequestBody AddFriendRequest request) {
 
         // service 호출
-        SchoolRankingResponse response = userService.getSchoolRanking(userId);
+        AddFriendResponse response = userService.addFriend(userId, request);
 
         // 응답 반환
-        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(200, "학교별 랭킹 조회 성공", response));
+        return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(201, "친구 추가 성공", response));
     }
 
-    // 친구 랭킹 조회
-    @Operation(summary = "친구 랭킹 조회 API", description = "나 + 내 친구들 중 상위 7명 + (7등 밖이면) 내 순위를 조회하는 API")
-    @GetMapping("/ranking/friends")
-    public ResponseEntity<BaseResponse<FriendRankingResponse>> getFriendRanking(
+    // 친구 목록 조회
+    @Operation(summary = "친구 목록 조회 API", description = "내가 추가한 친구 목록을 조회하는 API")
+    @GetMapping("/friends")
+    public ResponseEntity<BaseResponse<List<FriendListResponse>>> getFriendList(
             @CurrentUser Long userId) {
 
         // service 호출
-        FriendRankingResponse response = userService.getFriendRanking(userId);
+        List<FriendListResponse> response = userService.getFriendList(userId);
 
         // 응답 반환
-        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(200, "친구 랭킹 조회 성공", response));
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(200, "친구 목록 조회 성공", response));
     }
 }

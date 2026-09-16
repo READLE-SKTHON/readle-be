@@ -18,15 +18,18 @@ public class Friend extends BaseTimeEntity {
     @Column(name = "friend_id")
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user; // 친구 추가한 사람
 
-    @Column(name = "added_user_id", nullable = false)
-    private Long addedUserId; // 추가된 친구
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "added_user_id", nullable = false)
+    private User addedUser; // 추가된 친구
 
     @Builder
-    private Friend(Long userId, Long addedUserId) {
-        this.userId = userId;
-        this.addedUserId = addedUserId;
+    private Friend(User user, User addedUser) {
+        this.user = user;
+        this.addedUser = addedUser;
     }
 }

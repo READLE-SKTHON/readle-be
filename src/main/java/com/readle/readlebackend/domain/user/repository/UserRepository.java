@@ -14,5 +14,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findAllByOrderByXpDesc();
 
     // xp 내림차순으로 특정 id들만 조회 (친구 랭킹 조회용)
-    List<User> findByIdInOrderByXpDesc(Set<Long> ids);
+    List<User> findByIdInOrderByXpDesc(List<Long> ids);
 }
