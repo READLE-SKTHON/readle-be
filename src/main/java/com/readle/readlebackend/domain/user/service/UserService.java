@@ -66,7 +66,7 @@ public class UserService {
         }
 
         // 로그 출력
-        log.info("[UserService] 전체 랭킹 조회 성공: userId={}, myRank={}", userId, myRank != null ? myRank.getRank() : null);
+        log.info("[UserService] 전체 랭킹 조회 성공");
 
         // 응답 세팅
         return AllRankingResponse.builder()
@@ -126,8 +126,7 @@ public class UserService {
         }
 
         // 로그 출력
-        log.info("[UserService] 학교별 랭킹 조회 성공: userId={}, schoolId={}, myRank={}",
-                userId, user.getSchoolId(), myRank != null ? myRank.getRank() : null);
+        log.info("[UserService] 학교별 랭킹 조회 성공");
 
         // 응답 세팅
         return SchoolRankingResponse.builder()
@@ -139,14 +138,14 @@ public class UserService {
     // 친구별 랭킹 조회
     public FriendRankingResponse getFriendRanking(Long userId) {
 
-        // 내가 추가한 친구 id 목록 조회
-        List<Friend> friends = friendRepository.findByUserId(userId);
+        // 내가 추가한 친구 목록 조회
+        List<Friend> friends = friendRepository.findByUser_Id(userId);
 
         // 나 + 친구들을 한 번에 조회
-        Set<Long> targetUserIds = new HashSet<>();
+        List<Long> targetUserIds = new ArrayList<>();
         targetUserIds.add(userId);
         for (Friend friend : friends) {
-            targetUserIds.add(friend.getAddedUserId());
+            targetUserIds.add(friend.getAddedUser().getId());
         }
         // xp 내림차순으로 조회
         List<User> targetUsers = userRepository.findByIdInOrderByXpDesc(targetUserIds);
@@ -187,8 +186,7 @@ public class UserService {
         }
 
         // 로그 출력
-        log.info("[UserService] 친구 랭킹 조회 성공: userId={}, friendCount={}, myRank={}",
-                userId, friends.size(), myRank != null ? myRank.getRank() : null);
+        log.info("[UserService] 친구 랭킹 조회 성공");
 
         // 응답 세팅
         return FriendRankingResponse.builder()
@@ -205,7 +203,7 @@ public class UserService {
                 .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
 
         // 이미 친구인지 확인
-        boolean isAlreadyFriend = friendRepository.findByUserIdAndAddedUserId(userId, user.getId()).isPresent();
+        boolean isAlreadyFriend = friendRepository.findByUser_IdAndAddedUser_Id(userId, user.getId()).isPresent();
 
         // 로그 출력
         log.info("[UserService] 닉네임으로 친구 검색 성공: userId={}", userId);
@@ -223,7 +221,11 @@ public class UserService {
     @Transactional
     public AddFriendResponse addFriend(Long userId, AddFriendRequest request) {
 
-        // 사용자가 존재하는지 조회
+        // 친구를 추가하는 본인 조회
+        User me = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(AuthErrorCode.INVALID_USER_ID));
+
+        // 닉네임으로 추가하려는 유저가 존재하는지 조회
         User user = userRepository.findByNickname(request.getNickname())
                 .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
 
@@ -234,15 +236,15 @@ public class UserService {
         }
 
         // 이미 추가된 친구인지 조회
-        if (friendRepository.findByUserIdAndAddedUserId(userId, user.getId()).isPresent()) {
+        if (friendRepository.findByUser_IdAndAddedUser_Id(userId, user.getId()).isPresent()) {
             log.warn("[UserService] 친구 추가 실패, 이미 친구 추가가 되어 있습니다.: userId={}, friendUserId={}", userId, user.getId());
             throw new CustomException(UserErrorCode.ALREADY_FRIEND);
         }
 
         // 친구 관계 객체 생성
         Friend friend = Friend.builder()
-                .userId(userId)
-                .addedUserId(user.getId())
+                .user(me)
+                .addedUser(user)
                 .build();
 
         // DB 저장
@@ -258,17 +260,16 @@ public class UserService {
                 .build();
     }
 
-    // 친구 목록 리스트 조회
+    // 친구 목록 조회
     public List<FriendListResponse> getFriendList(Long userId) {
 
-        // 친구 목록 조회
-        List<Friend> friends = friendRepository.findByUserId(userId);
+        // 내가 추가한 친구 목록 조회
+        List<Friend> friends = friendRepository.findByUser_Id(userId);
 
         // 응답 세팅
         List<FriendListResponse> list = new ArrayList<>();
         for (Friend friend : friends) {
-            User friendUser = userRepository.findById(friend.getAddedUserId())
-                    .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
+            User friendUser = friend.getAddedUser();
 
             list.add(FriendListResponse.builder()
                     .userId(friendUser.getId())
@@ -278,7 +279,7 @@ public class UserService {
         }
 
         // 로그 출력
-        log.info("[UserService] 친구 목록 조회 성공: userId={}", userId);
+        log.info("[UserService] 친구 목록 조회 성공: userId={}, friendCount={}", userId, list.size());
 
         return list;
     }

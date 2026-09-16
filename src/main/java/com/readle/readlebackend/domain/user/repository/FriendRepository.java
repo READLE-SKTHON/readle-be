@@ -9,8 +9,8 @@ import java.util.Optional;
 public interface FriendRepository extends JpaRepository<Friend, Long> {
 
     // 친구 랭킹 조회용: 이 유저가 추가한 친구 목록
-    List<Friend> findByUserId(Long userId);
+    List<Friend> findByUser_Id(Long userId);
 
     // 이미 친구인지 조회
-    Optional<Friend> findByUserIdAndAddedUserId(Long userId, Long addedUserId);
+    Optional<Friend> findByUser_IdAndAddedUser_Id(Long userId, Long addedUserId);
 }
