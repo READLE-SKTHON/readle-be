@@ -2,9 +2,8 @@ package com.readle.readlebackend.domain.user.service;
 
 import com.readle.readlebackend.domain.school.entity.School;
 import com.readle.readlebackend.domain.school.repository.SchoolRepository;
-import com.readle.readlebackend.domain.user.dto.response.AllRankingResponse;
-import com.readle.readlebackend.domain.user.dto.response.FriendRankingResponse;
-import com.readle.readlebackend.domain.user.dto.response.SchoolRankingResponse;
+import com.readle.readlebackend.domain.user.dto.request.AddFriendRequest;
+import com.readle.readlebackend.domain.user.dto.response.*;
 import com.readle.readlebackend.domain.user.entity.Friend;
 import com.readle.readlebackend.domain.user.entity.User;
 import com.readle.readlebackend.domain.user.exception.UserErrorCode;
@@ -196,5 +195,91 @@ public class UserService {
                 .rankings(rankings)
                 .myRank(myRank)
                 .build();
+    }
+
+    // 닉네임으로 친구 검색
+    public FriendSearchResponse searchFriends(Long userId, String nickname) {
+
+        // 사용자가 존재하는지 조회
+        User user = userRepository.findByNickname(nickname)
+                .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
+
+        // 이미 친구인지 확인
+        boolean isAlreadyFriend = friendRepository.findByUserIdAndAddedUserId(userId, user.getId()).isPresent();
+
+        // 로그 출력
+        log.info("[UserService] 닉네임으로 친구 검색 성공: userId={}", userId);
+
+        // 응답 세팅
+        return FriendSearchResponse.builder()
+                .userId(user.getId())
+                .nickname(user.getNickname())
+                .level(user.getLevel())
+                .isAlreadyFriend(isAlreadyFriend)
+                .build();
+    }
+
+    // 친구 추가
+    @Transactional
+    public AddFriendResponse addFriend(Long userId, AddFriendRequest request) {
+
+        // 사용자가 존재하는지 조회
+        User user = userRepository.findByNickname(request.getNickname())
+                .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
+
+        // 자기 자신은 친구 추가가 안됨
+        if (user.getId().equals(userId)) {
+            log.warn("[UserService] 자기 자신은 친구로 추가할 수 없습니다.: userId={}", userId);
+            throw new CustomException(UserErrorCode.SELF_FRIEND_NOT_ALLOWED);
+        }
+
+        // 이미 추가된 친구인지 조회
+        if (friendRepository.findByUserIdAndAddedUserId(userId, user.getId()).isPresent()) {
+            log.warn("[UserService] 친구 추가 실패, 이미 친구 추가가 되어 있습니다.: userId={}, friendUserId={}", userId, user.getId());
+            throw new CustomException(UserErrorCode.ALREADY_FRIEND);
+        }
+
+        // 친구 관계 객체 생성
+        Friend friend = Friend.builder()
+                .userId(userId)
+                .addedUserId(user.getId())
+                .build();
+
+        // DB 저장
+        friendRepository.save(friend);
+
+        // 로그 출력
+        log.info("[UserService] 친구 추가 성공: userId={}, friendUserId={}", userId, user.getId());
+
+        // 응답 세팅
+        return AddFriendResponse.builder()
+                .userId(user.getId())
+                .nickname(user.getNickname())
+                .build();
+    }
+
+    // 친구 목록 리스트 조회
+    public List<FriendListResponse> getFriendList(Long userId) {
+
+        // 친구 목록 조회
+        List<Friend> friends = friendRepository.findByUserId(userId);
+
+        // 응답 세팅
+        List<FriendListResponse> list = new ArrayList<>();
+        for (Friend friend : friends) {
+            User friendUser = userRepository.findById(friend.getAddedUserId())
+                    .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
+
+            list.add(FriendListResponse.builder()
+                    .userId(friendUser.getId())
+                    .nickname(friendUser.getNickname())
+                    .level(friendUser.getLevel())
+                    .build());
+        }
+
+        // 로그 출력
+        log.info("[UserService] 친구 목록 조회 성공: userId={}", userId);
+
+        return list;
     }
 }
